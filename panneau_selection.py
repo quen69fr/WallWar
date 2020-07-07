@@ -194,9 +194,53 @@ def ecran_amelioration(largeur, hauteur, type_amelioration_presentee):
         draw_filled_rect(ecran, (0, 0, contours, hauteur), couleur)
         draw_filled_rect(ecran, (0, hauteur - contours, largeur, hauteur), couleur)
         draw_filled_rect(ecran, (largeur - contours, 0, largeur, hauteur), couleur)
-    affiche_texte(Amelioreur.dic_ameliorations[PARAM_AMELIORATION_NOM][type_amelioration_presentee], int(largeur / 2),
+    affiche_texte(Amelioreur.dic_ameliorations[PARAM_AMELIORATION_NOM][type_amelioration_presentee],
+                  int(largeur * COEF_PROPORTION_TITRE_ARGENT_PANNEAU_AMELIORATION / 2 + MARGE_PANNEAU_SELECTION),
                   int(MARGE_PANNEAU_SELECTION / 2) - 1, ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.95),
                   couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1)
+
+    prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration_presentee]
+    prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration_presentee]
+
+    marge = MARGE_PANNEAU_SELECTION / 2
+    rayon = RAYON_RESSOURCE_PANNEAU_VIGNETTES
+    x_min = int(COEF_PROPORTION_TITRE_ARGENT_PANNEAU_AMELIORATION * largeur)
+    y_centre = int((MARGE_PANNEAU_SELECTION + TAILLE_TEXTE_PANNEAU_SELECTION) / 2)
+    x_centre = int(x_min + (largeur - x_min) / 2)
+    draw_filled_circle(ecran, (x_min + rayon + marge, y_centre), rayon,
+                       DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_ARGENT])
+    affiche_texte(str(prix_argent), x_min + 2 * rayon + marge + 2, y_centre + 2,
+                  ecran, taille=int(rayon * 2 + 2), couleur=COULEUR_COMPTENU_PANNEAU_CONSTRUCTION,
+                  y_0haut_1centre_2bas=1)
+    draw_filled_circle(ecran, (x_centre + rayon + marge, y_centre), rayon,
+                       DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_LIQUIDE])
+    affiche_texte(str(prix_liquide), x_centre + 2 * rayon + marge + 2, y_centre + 2, ecran,
+                  taille=int(rayon * 2 + 2), couleur=COULEUR_COMPTENU_PANNEAU_CONSTRUCTION, y_0haut_1centre_2bas=1)
+
+    liste_textes_ameliorations = []
+    for i, affichage in enumerate(
+            Amelioreur.dic_ameliorations[PARAM_AMELIORATION_LISTE_TPV_AFFICHAGE][type_amelioration_presentee]):
+        if affichage:
+            type_e, param_a, new_value = \
+                Amelioreur.dic_ameliorations[PARAM_AMELIORATION_LISTE__TYPE_PARAM_VALUE][type_amelioration_presentee][i]
+            nom_element = Element.dic_elements[PARAM_F_NOM][type_e]
+            param_a_texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param_a]
+            ancienne_valeur = Element.dic_elements[param_a][type_e]
+            if type(ancienne_valeur) == int and type(new_value) == int:
+                texte_valeur = f'{ancienne_valeur} + {new_value - ancienne_valeur}'
+            else:
+                texte_valeur = str(new_value)
+            liste_textes_ameliorations.append(f'{nom_element}, {param_a_texte.lower()} {texte_valeur}')
+    hauteur_titre = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.5)
+    y = hauteur_titre + (hauteur - hauteur_titre) / 2
+    dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.2)
+    y = int(y - dy * (len(liste_textes_ameliorations) - 1) / 2)
+    for texte in liste_textes_ameliorations:
+        affiche_texte(texte, marge, y, ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.8),
+                      couleur=COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION,
+                      y_0haut_1centre_2bas=1)
+        y += dy
+
     return ecran
 
 
@@ -214,9 +258,9 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
     rect_barre_construction = None
     position_illustration_construction = None
     rect_barre_amelioration = None
-    fleches_ameliorations = None  # TODO
-    pos_fleches_ameliorations = None  # TODO
     rect_presentation_amelioration = None
+    bouton_amelioration = None
+    bouton_amelioration_stop = None
 
     def __init__(self, monde: Monde, batiment_selectionne, centre=False):
         if centre:
@@ -235,7 +279,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
         self.construction_actif = (self.batiment.constructeur is not None)
         self.amelioreur_actif = (self.batiment.amelioreur is not None)
         self.type_amelioration_presentee = None
-        self.new_amelioration_presentee = True
+        self.ecran_amelioration_presentee = None
         self.etat_batiment_infos = None
         self.init_mon_ecran_construction()
         self.init_mon_ecran_amelioration()
@@ -273,7 +317,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
             x_centre = int(x_rect + largeur_rect / 2)
             y_centre = int(y_rect + hauteur_rect / 2)
             for n in [-1, 1]:
-                x = x_centre - n * dx
+                x = int(x_centre - n * (dx + TAILLE_FLECHES_AMELIORATIONS / 3))
                 p1 = x + n * TAILLE_FLECHES_AMELIORATIONS, y_centre - n * TAILLE_FLECHES_AMELIORATIONS
                 p2 = x, y_centre
                 p3 = p1[0], y_centre + n * TAILLE_FLECHES_AMELIORATIONS
@@ -299,12 +343,13 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
             if x_relatif > self.largeur_ecran * 2 / 3:
                 if not self.ecran_base == self.mon_ecran_amelioration:
                     self.ecran_base = self.mon_ecran_amelioration
+                    if self.batiment.amelioreur is not None:
+                        if self.batiment.amelioreur.type_amelioration_en_cours is None:
+                            self.type_amelioration_presentee = self.batiment.amelioreur.liste_ameliorations_possibles[0]
+                        else:
+                            self.type_amelioration_presentee = self.batiment.amelioreur.type_amelioration_en_cours
+                        self.ecran_amelioration_presentee = None
                     self.new_affichage = True
-                    if self.batiment.amelioreur.type_ameliration_en_cours is None:
-                        self.type_amelioration_presentee = self.batiment.amelioreur.liste_ameliorations_possibles[0]
-                    else:
-                        self.type_amelioration_presentee = self.batiment.amelioreur.type_ameliration_en_cours
-                    self.new_amelioration_presentee = True
             elif x_relatif < self.largeur_ecran / 3:
                 if not self.ecran_base == self.mon_ecran_construction:
                     self.ecran_base = self.mon_ecran_construction
@@ -327,24 +372,32 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                         self.batiment.annule_construction_constructeur(i)
                         return
             elif self.amelioreur_actif and self.ecran_base == self.mon_ecran_amelioration:
-                x, y, largeur, hauteur = self.rect_presentation_amelioration
-                if y < y_relatif < y + hauteur and len(self.batiment.amelioreur.liste_ameliorations_possibles) > 1:
-                    if x_relatif < x:
-                        i = self.batiment.amelioreur.liste_ameliorations_possibles.index(
-                            self.type_amelioration_presentee)
-                        if i > 0:
-                            self.type_amelioration_presentee = \
-                                self.batiment.amelioreur.liste_ameliorations_possibles[i - 1]
-                            self.new_amelioration_presentee = True
-                            self.new_affichage = True
-                    elif x_relatif > x + largeur:
-                        i = self.batiment.amelioreur.liste_ameliorations_possibles.index(
-                            self.type_amelioration_presentee)
-                        if i < len(self.batiment.amelioreur.liste_ameliorations_possibles) - 1:
-                            self.type_amelioration_presentee = \
-                                self.batiment.amelioreur.liste_ameliorations_possibles[i + 1]
-                            self.new_amelioration_presentee = True
-                            self.new_affichage = True
+                if self.batiment.amelioreur.type_amelioration_en_cours is None:
+                    if self.bouton_amelioration.clic(x_relatif, y_relatif):
+                        self.batiment.lance_amelioration_amelioreur(self.type_amelioration_presentee)
+                    else:
+                        x, y, largeur, hauteur = self.rect_presentation_amelioration
+                        if y < y_relatif < y + hauteur and \
+                                len(self.batiment.amelioreur.liste_ameliorations_possibles) > 1:
+                            if x_relatif < x:
+                                i = self.batiment.amelioreur.liste_ameliorations_possibles.index(
+                                    self.type_amelioration_presentee)
+                                if i > 0:
+                                    self.type_amelioration_presentee = \
+                                        self.batiment.amelioreur.liste_ameliorations_possibles[i - 1]
+                                    self.ecran_amelioration_presentee = None
+                                    self.new_affichage = True
+                            elif x_relatif > x + largeur:
+                                i = self.batiment.amelioreur.liste_ameliorations_possibles.index(
+                                    self.type_amelioration_presentee)
+                                if i < len(self.batiment.amelioreur.liste_ameliorations_possibles) - 1:
+                                    self.type_amelioration_presentee = \
+                                        self.batiment.amelioreur.liste_ameliorations_possibles[i + 1]
+                                    self.ecran_amelioration_presentee = None
+                                    self.new_affichage = True
+                else:
+                    if self.bouton_amelioration.clic(x_relatif, y_relatif):
+                        self.batiment.annule_amelioration_en_cours()
 
     def update(self):
         if self.ecran_base == self.mon_ecran_information:
@@ -359,10 +412,28 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                     self.new_affichage = True
                     self.batiment.constructeur.new_affichage = False
         else:
-            if self.amelioreur_actif:
-                if self.batiment.amelioreur.new_affichage:
+            if not self.amelioreur_actif:
+                if self.batiment.amelioreur is not None:
+                    self.init_mon_ecran_amelioration()
+                    self.amelioreur_actif = True
+                    if self.batiment.amelioreur.type_amelioration_en_cours is None:
+                        self.type_amelioration_presentee = self.batiment.amelioreur.liste_ameliorations_possibles[0]
+                    else:
+                        self.type_amelioration_presentee = self.batiment.amelioreur.type_amelioration_en_cours
+                    self.ecran_amelioration_presentee = None
                     self.new_affichage = True
-                    self.batiment.amelioreur.new_affichage = False
+            if self.amelioreur_actif:
+                if self.batiment.amelioreur is None:
+                    self.amelioreur_actif = False
+                    self.init_mon_ecran_amelioration()
+                    self.new_affichage = True
+                else:
+                    if self.batiment.amelioreur.new_affichage:
+                        if self.batiment.amelioreur.type_amelioration_en_cours is None:
+                            self.type_amelioration_presentee = self.batiment.amelioreur.liste_ameliorations_possibles[0]
+                            self.ecran_amelioration_presentee = None
+                        self.batiment.amelioreur.new_affichage = False
+                        self.new_affichage = True
 
     def update_affichage(self):
         self.ecran.blit(self.ecran_base, (0, 0))
@@ -396,43 +467,44 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
             y += dy
 
     def update_affichage_amelioreur_actif(self):
-        if self.new_amelioration_presentee:
+        if self.ecran_amelioration_presentee is None:
             self.update_affichage_amelioreur_presentation_amelioration()
-            self.update_affichage_amelioreur_barre_avancement()
-        elif self.batiment.amelioreur.new_affichage:
-            self.update_affichage_amelioreur_barre_avancement()
-        # TODO : Gerer les améliorations qui ne sont plus possibles...
+        self.ecran.blit(self.ecran_amelioration_presentee, (0, 0))
+        self.update_affichage_amelioreur_barre_avancement()
+        if self.batiment.amelioreur.type_amelioration_en_cours is None:
+            self.bouton_amelioration.affiche(self.ecran)
+        else:
+            self.bouton_amelioration_stop.affiche(self.ecran)
 
     def update_affichage_amelioreur_presentation_amelioration(self):
+        self.ecran_amelioration_presentee = pygame.Surface((self.largeur_ecran, self.hauteur_ecran))
+        self.ecran_amelioration_presentee.blit(self.mon_ecran_amelioration, (0, 0))
         x, y, largeur, hauteur = self.rect_presentation_amelioration
         presentation = ecran_amelioration(largeur, hauteur, self.type_amelioration_presentee)
-        self.ecran.blit(presentation, (x, y))
-        self.new_amelioration_presentee = False
+        self.ecran_amelioration_presentee.blit(presentation, (x, y))
 
     def update_affichage_amelioreur_barre_avancement(self):
-        type_amelioration_en_cours = self.batiment.amelioreur.type_ameliration_en_cours
+        type_amelioration_en_cours = self.batiment.amelioreur.type_amelioration_en_cours
         x_barre, y_barre, largeur_barre, hauteur_barre = self.rect_barre_amelioration
         if type_amelioration_en_cours is not None:
-            rapport = (self.batiment.constructeur.avancement_construction /
-                       self.batiment.constructeur.avancement_construction_max)
+            rapport = (self.batiment.amelioreur.avancement_amelioration /
+                       self.batiment.amelioreur.avancement_ameliration_max)
             pourcentage = int(rapport * 100)
-            barre_construction = barre_avancement((largeur_barre, hauteur_barre),
+            barre_amelioration = barre_avancement((largeur_barre, hauteur_barre),
                                                   COULEUR_BARRE_ETAPE_NEUTRE_PANNEAU_CONSTRUCTION,
                                                   rapport, width=CONTOURS_BULLE_PANNEAU_SELECTION,
                                                   couleur_bord=COULEUR_COMPTENU_PANNEAU_SELECTION)
-            self.ecran.blit(barre_construction, (x_barre, y_barre))
+            self.ecran.blit(barre_amelioration, (x_barre, y_barre))
 
-            affiche_texte(f'{Amelioreur.dic_ameliorations[PARAM_AMELIORATION_NOM].upper()} : {pourcentage}%',
-                          int(x_barre + largeur_barre / 2), int(y_barre + hauteur_barre / 2 + 2), self.ecran,
-                          taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4), x_0gauche_1centre_2droite=1,
+            affiche_texte(f'{pourcentage}%', int(x_barre + largeur_barre / 2), int(y_barre + hauteur_barre / 2 + 2),
+                          self.ecran,  taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4), x_0gauche_1centre_2droite=1,
                           y_0haut_1centre_2bas=1, couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
         else:
-            barre_construction = barre_avancement((largeur_barre, hauteur_barre),
+            barre_amelioration = barre_avancement((largeur_barre, hauteur_barre),
                                                   COULEUR_BARRE_ETAPE_NEUTRE_PANNEAU_CONSTRUCTION,
                                                   0, width=CONTOURS_BULLE_PANNEAU_SELECTION,
                                                   couleur_bord=COULEUR_COMPTENU_PANNEAU_SELECTION)
-            self.ecran.blit(barre_construction, (x_barre, y_barre))
-        self.batiment.amelioreur.new_affichage = False
+            self.ecran.blit(barre_amelioration, (x_barre, y_barre))
 
     def update_affichage_construction_active(self):
         x_carre_illustration, y_carre_illustration = self.position_illustration_construction
@@ -603,13 +675,26 @@ def init_panneau_construction_amelioration(rect_bulle: (int, int, int, int), pos
                                                              (0, hauteur_diminuee)],
                         CONTOURS_BULLE_PANNEAU_SELECTION)
 
+    # largeur_bouton, hauteur_bouton = DIMENTION_BOUTON_AMELIORATION
     PanneauConstructionAmeliorationBatiment.rect_barre_amelioration = (MARGE_PANNEAU_SELECTION, y_barre,
-                                                                       largeur - 2 * MARGE_PANNEAU_SELECTION,
-                                                                       hauteur_barre)
+                                                                       largeur - hauteur_barre + 1 -
+                                                                       3 * MARGE_PANNEAU_SELECTION, hauteur_barre)
+    x_presentation_amelioration = int(largeur / 2 - LARGEUR_PANNEAU_INFOS_AMELIORATION / 2)
     y_presentation_amelioration = y_barre + hauteur_barre + MARGE_PANNEAU_SELECTION - 1
+    hauteur_presentation_amelioration = hauteur - y_presentation_amelioration - MARGE_PANNEAU_SELECTION
     PanneauConstructionAmeliorationBatiment.rect_presentation_amelioration = \
-        (int(largeur / 2 - LARGEUR_PANNEAU_INFOS_AMELIORATION / 2), y_presentation_amelioration,
-         LARGEUR_PANNEAU_INFOS_AMELIORATION, hauteur - y_presentation_amelioration - MARGE_PANNEAU_SELECTION)
+        (x_presentation_amelioration, y_presentation_amelioration,
+         LARGEUR_PANNEAU_INFOS_AMELIORATION, hauteur_presentation_amelioration)
+    PanneauConstructionAmeliorationBatiment.bouton_amelioration = \
+        BoutonTexte(largeur - hauteur_barre - MARGE_PANNEAU_SELECTION, y_barre,
+                    hauteur_barre, hauteur_barre,
+                    COULEUR_BOUTONS_PANNEAU_SELECTION, TEXTE_BOUTON_AMELIORATION,
+                    TAILLE_TEXTE_PANNEAU_SELECTION, COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION)
+    PanneauConstructionAmeliorationBatiment.bouton_amelioration_stop = \
+        BoutonTexte(PanneauConstructionAmeliorationBatiment.bouton_amelioration.x,
+                    PanneauConstructionAmeliorationBatiment.bouton_amelioration.y, hauteur_barre, hauteur_barre,
+                    COULEUR_BOUTONS_PANNEAU_SELECTION, TEXTE_BOUTON_AMELIORATION_STOP,
+                    TAILLE_TEXTE_PANNEAU_SELECTION, COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION)
 
     # L'ecran informations
     PanneauConstructionAmeliorationBatiment.ecran_informations = pygame.Surface((largeur, hauteur))

@@ -202,6 +202,15 @@ class Monde:
                     personne.cible = None
         Batiment.nb_personne_max -= batiment.nb_places
 
+    def update_batiemnt_amelioration(self):
+        for batiment in self.liste_batiments_constuits:
+            type_amelioration_prete = batiment.update_amelioreur()
+            if type_amelioration_prete is not None:
+                for type_element, param, value in \
+                        (Amelioreur.dic_ameliorations[PARAM_AMELIORATION_LISTE__TYPE_PARAM_VALUE]
+                         [type_amelioration_prete]):
+                    Element.dic_elements[param][type_element] = value
+
     def update_batiments_constuits(self):
         for batiment in self.liste_batiments_constuits:
             type_construction_prete = batiment.update_constructeur()
@@ -375,6 +384,7 @@ class Monde:
             self.new_affichage_static = True
         self.update_batiments_en_cours_de_construction()
         self.update_batiments_constuits()
+        self.update_batiemnt_amelioration()
         self.update_sources()
         self.update_personnes()
         self.update_explosions()

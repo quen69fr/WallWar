@@ -52,29 +52,37 @@ class Amelioreur:
 
     def __init__(self, liste_ameliorations_possibles):
         self.liste_ameliorations_possibles = liste_ameliorations_possibles
-        self.type_ameliration_en_cours = None
-        self.avancement_ameliration = 0
+        self.type_amelioration_en_cours = None
+        self.avancement_amelioration = 0
         self.new_affichage = True
 
     def update(self):
-        if self.type_ameliration_en_cours is not None:
-            self.avancement_ameliration += 1
+        if self.type_amelioration_en_cours is not None:
+            self.avancement_amelioration += 1
             self.new_affichage = True
-            if self.avancement_ameliration >= self.avancement_ameliration_max:
-                type_ameliration = self.type_ameliration_en_cours
-                self.type_ameliration_en_cours = None
+            if self.avancement_amelioration >= self.avancement_ameliration_max:
+                type_ameliration = self.type_amelioration_en_cours
+                self.type_amelioration_en_cours = None
                 self.liste_ameliorations_possibles.remove(type_ameliration)
                 return type_ameliration
         return None
 
     def lance_amelioration(self, type_amelioration):
-        if self.type_ameliration_en_cours is None and type_amelioration in self.liste_ameliorations_possibles:
-            self.type_ameliration_en_cours = type_amelioration
+        if self.type_amelioration_en_cours is None and type_amelioration in self.liste_ameliorations_possibles:
+            self.type_amelioration_en_cours = type_amelioration
+            self.avancement_amelioration = 0
+            return True
+        return False
+
+    def annule_construction(self):
+        self.type_amelioration_en_cours = None
+        self.avancement_amelioration = 0
+        self.new_affichage = True
 
     @property
     def avancement_ameliration_max(self):
-        if self.type_ameliration_en_cours is not None:
-            return Amelioreur.dic_ameliorations[PARAM_AMELIORATION_DUREE][self.type_ameliration_en_cours]
+        if self.type_amelioration_en_cours is not None:
+            return Amelioreur.dic_ameliorations[PARAM_AMELIORATION_DUREE][self.type_amelioration_en_cours]
         return None
 
 
@@ -184,6 +192,11 @@ class Batiment(Element):
             return self.constructeur.update()
         return None
 
+    def update_amelioreur(self):
+        if self.amelioreur is not None:
+            return self.amelioreur.update()
+        return None
+
     def ajoute_construction_constructeur(self, type_personnage):
         prix_argent = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION][type_personnage]
         prix_liquide = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION][type_personnage]
@@ -204,6 +217,31 @@ class Batiment(Element):
                 if self.argent_comptenu > self.argent_comptenu_max:
                     self.argent_comptenu = self.argent_comptenu_max
                 Batiment.liquide_comptenu_general += prix_liquide
+                return True
+        return False
+
+    def lance_amelioration_amelioreur(self, type_amelioration):
+        prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration]
+        prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration]
+        if self.argent_comptenu >= prix_argent and Batiment.liquide_comptenu_general >= prix_liquide:
+            if self.amelioreur.lance_amelioration(type_amelioration):
+                self.argent_comptenu -= prix_argent
+                Batiment.liquide_comptenu_general -= prix_liquide
+                return True
+        return False
+
+    def annule_amelioration_en_cours(self):
+        if self.amelioreur is not None:
+            type_amelioration = self._amelioreur.type_amelioration_en_cours
+            if type_amelioration is not None:
+                coef = 1 - (self._amelioreur.avancement_amelioration / self._amelioreur.avancement_ameliration_max)
+                self.argent_comptenu += \
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration])
+                if self.argent_comptenu > self.argent_comptenu_max:
+                    self.argent_comptenu = self.argent_comptenu_max
+                Batiment.liquide_comptenu_general += \
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration])
+                self._amelioreur.annule_construction()
                 return True
         return False
 
