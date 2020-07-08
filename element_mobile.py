@@ -197,8 +197,8 @@ class ElementMobile(Element):
         # 1. On récupère la grille des points relays de la carte
         # 2. FONCTION : trouve_chemin_grille :
         #       a. On trouve le chemin grâce à la grille
-        #       b. On donne pour chaque case ij ses coordonne xy sur la carte
-        #       c. On affine la trajectoire
+        #       b. On affine la trajectoire
+        #       c. On donne pour chaque case ij ses coordonne xy sur la carte
 
         i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
         self.chemin_liste_objectifs = self.trouve_chemin_grille(self.carte.grille_points_relay, i_pos, j_pos)
@@ -239,11 +239,14 @@ class ElementMobile(Element):
         del chemin_ij[0]
 
         # --- b ---
-        chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
+        for i_o, j_o in chemin_ij[:]:
+            if not ((i_o, j_o) in self.carte.liste_coordonnees_objectifs_possibles or (i_o, j_o) == chemin_ij[-1]):
+                chemin_ij.remove((i_o, j_o))
 
         # --- c ---
+        chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
+
         if len(chemin_xy) > 0:
-            # TODO : Supprimer les points "innutils"
             if x_obj is not None and y_obj is not None:
                 chemin_xy[-1] = (x_obj, y_obj)
 
