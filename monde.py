@@ -121,6 +121,7 @@ class Monde:
                             elif isinstance(personne.cible, Batiment):
                                 self.remove_batiement_constuit(personne.cible)
                             personne.tireur.nb_destructions += 1
+        self.gere_chevauchements_personnes()
 
     def update_chemin_personnes(self):
         for personne in self.liste_personnes:
@@ -145,6 +146,30 @@ class Monde:
                 soldat.new_cible(personne)
                 return
         soldat.new_objectif(x_carte_clic, y_carte_clic)
+
+    def gere_chevauchements_personnes(self):
+        for i, personne1 in enumerate(self.liste_personnes):
+            for personne2 in self.liste_personnes[i + 1:]:
+                # if personne1.objectif is None or personne2.objectif is None:
+                d_max = (personne1.rayon + personne2.rayon) * COEF_RAYONS_PERSONNES_CHEVAUCHEMENT
+                dx = personne2.x_float - personne1.x_float
+                if abs(dx) < d_max:
+                    dy = personne2.y_float - personne1.y_float
+                    if abs(dy) < d_max:
+                        d2 = dx ** 2 + dy ** 2
+                        if d2 < d_max ** 2:
+                            d = math.sqrt(d2)
+                            somme_masses = personne1.masse_relative + personne2.masse_relative
+                            coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / d
+                            for personne in [personne2, personne1]:
+                                # if personne.objectif is None:
+                                coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
+                                if personne == personne1:
+                                    coef_relatif *= -1
+                                personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
+                                if personne.objectif is not None:
+                                    x, y = personne.objectif
+                                    personne.oriente_vers_point(x, y)
 
     # -------------------------------------------------
     #                      Sources

@@ -253,8 +253,12 @@ class ElementMobile(Element):
     #                     Evenements
     # -------------------------------------------------
     def deplace(self):
-        self.x_float += self.vitesse_deplacement * math.cos(self._orientation)
-        self.y_float -= self.vitesse_deplacement * math.sin(self._orientation)
+        self.deplace_dx_dy(self.vitesse_deplacement * math.cos(self._orientation),
+                           - self.vitesse_deplacement * math.sin(self._orientation))
+
+    def deplace_dx_dy(self, dx: int, dy: int):
+        self.x_float += dx
+        self.y_float += dy
 
         self.x_sur_carte = int(self.x_float)
         self.y_sur_carte = int(self.y_float)
@@ -323,3 +327,7 @@ class ElementMobile(Element):
     @property
     def rayon(self):
         return Element.dic_elements[PARAM_F_ELEMENT_MOBILE_RAYON][self.type]
+
+    @property
+    def masse_relative(self):
+        return Element.dic_elements[PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE][self.type]
