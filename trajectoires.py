@@ -249,14 +249,10 @@ class Graph:
                 if arete not in liste_aretes_selon_les_sommets:
                     liste_aretes_selon_les_sommets.append(arete)
 
-        sorted(reele_liste_aretes,
-               key=lambda arete: arete.__str__()[30:40])
-        sorted(liste_aretes_selon_les_sommets,
-               key=lambda arete: arete.__str__()[30:40])
-        sorted(reele_liste_sommets,
-               key=lambda sommet: sommet.__str__()[31:41])
-        sorted(liste_sommets_selon_les_aretes,
-               key=lambda sommet: sommet.__str__()[31:41])
+        sorted(reele_liste_aretes, key=lambda a: a.__str__()[30:40])
+        sorted(liste_aretes_selon_les_sommets, key=lambda a: a.__str__()[30:40])
+        sorted(reele_liste_sommets, key=lambda s: s.__str__()[31:41])
+        sorted(liste_sommets_selon_les_aretes, key=lambda s: s.__str__()[31:41])
 
         print('Le tri ne marche pas !')
         if not reele_liste_aretes == liste_aretes_selon_les_sommets:
@@ -269,12 +265,8 @@ class Graph:
             print(f'  -> Liste selon les aretes : {liste_sommets_selon_les_aretes}')
 
     def trouve_trajectoire_ij(self, i_depart, j_depart, liste_ij_arrivee):
-        if len(liste_ij_arrivee) == 0:
-            return []
-
-        chemin_le_plus_court = None
-        distance_chemin_le_plus_court = 0
-        conversion_sommet_to_ij = True
+        chemin_le_plus_court = []
+        distance_chemin_le_plus_court = math.inf
 
         for i_arrivee, j_arrivee in liste_ij_arrivee:
             liste_cases_aretes = self.liste_cases_aretes_si_possible(i_depart, j_depart, i_arrivee, j_arrivee)
@@ -283,8 +275,7 @@ class Graph:
                     return [(i_depart, j_depart), (i_arrivee, j_arrivee)]
                 else:
                     new_distance = math.sqrt((i_arrivee - i_depart) ** 2 + (j_arrivee - j_depart) ** 2)
-                    if chemin_le_plus_court is None or distance_chemin_le_plus_court > new_distance:
-                        conversion_sommet_to_ij = False
+                    if distance_chemin_le_plus_court > new_distance:
                         chemin_le_plus_court = [(i_depart, j_depart), (i_arrivee, j_arrivee)]
                         distance_chemin_le_plus_court = new_distance
 
@@ -294,15 +285,15 @@ class Graph:
         if sommet_depart is None:
             sommet_depart = Sommet(i_depart, j_depart)
             self.liste_sommets_temp.append(sommet_depart)
-            if not self.add_aretes_sommet(sommet_depart) and chemin_le_plus_court is None:
+            if not self.add_aretes_sommet(sommet_depart) and len(chemin_le_plus_court) == 0:
                 return_chemin = True
         else:
-            if len(sommet_depart.liste_aretes) == 0 and chemin_le_plus_court is None:
+            if len(sommet_depart.liste_aretes) == 0 and len(chemin_le_plus_court) == 0:
                 return_chemin = True
 
         liste_sommet_arrivee = []
         if not return_chemin:
-            if chemin_le_plus_court is None:
+            if len(chemin_le_plus_court) == 0:
                 return_chemin = True
             for i_arrivee, j_arrivee in liste_ij_arrivee:
                 sommet_arrivee = self.cherche_sommet_in_liste_sommets_temp(i_arrivee, j_arrivee)
@@ -317,28 +308,31 @@ class Graph:
                 liste_sommet_arrivee.append(sommet_arrivee)
 
         if not return_chemin:
-            liste_chemins_en_cours = [([sommet_depart], 0)]
-            for chemin, distance in liste_chemins_en_cours:
-                if chemin_le_plus_court is None or distance_chemin_le_plus_court > distance:
-                    for arete in chemin[-1].liste_aretes:
-                        sommet = arete.sommet1 if arete.sommet2 == chemin[-1] else arete.sommet2
-                        if sommet not in chemin:
-                            if sommet in self.liste_sommets_temp:
-                                if sommet in liste_sommet_arrivee:
-                                    new_distance = distance + arete.longueur
-                                    if chemin_le_plus_court is None or distance_chemin_le_plus_court > new_distance:
-                                        conversion_sommet_to_ij = True
-                                        chemin_le_plus_court = chemin[:] + [sommet]
-                                        distance_chemin_le_plus_court = new_distance
-                                        break
-                            else:
-                                new_distance = distance + arete.longueur
-                                if chemin_le_plus_court is None or distance_chemin_le_plus_court > new_distance:
-                                    new_chemin = chemin[:] + [sommet]
-                                    liste_chemins_en_cours.append((new_chemin, new_distance))
+            liste_sommets_non_traites = [sommet for sommet in self.liste_sommets + liste_sommet_arrivee]
+            dic_distance_sommet = {sommet: math.inf for sommet in self.liste_sommets + liste_sommet_arrivee}
+            dic_chemin_sommet = {sommet: [] for sommet in self.liste_sommets + liste_sommet_arrivee}
+            liste_sommets_non_traites.append(sommet_depart)
+            dic_distance_sommet[sommet_depart] = 0
+            dic_chemin_sommet[sommet_depart] = [(sommet_depart.i, sommet_depart.j)]
+            while len(liste_sommets_non_traites) > 0:
+                sommet = min(liste_sommets_non_traites, key=lambda sommet: dic_distance_sommet[sommet])
+                if dic_distance_sommet[sommet] == math.inf or \
+                        dic_distance_sommet[sommet] > distance_chemin_le_plus_court:
+                    break
+                liste_sommets_non_traites.remove(sommet)
+                for arete in sommet.liste_aretes:
+                    sommet2 = arete.sommet1 if arete.sommet2 == sommet else arete.sommet2
+                    if sommet2 in liste_sommets_non_traites:
+                        if dic_distance_sommet[sommet] < dic_distance_sommet[sommet2]:
+                            new_distance = dic_distance_sommet[sommet] + arete.longueur
+                            if new_distance < dic_distance_sommet[sommet2]:
+                                dic_distance_sommet[sommet2] = new_distance
+                                dic_chemin_sommet[sommet2] = dic_chemin_sommet[sommet] + [(sommet2.i, sommet2.j)]
 
-        if chemin_le_plus_court is None:
-            return []
-        if conversion_sommet_to_ij:
-            return [(sommet.i, sommet.j) for sommet in chemin_le_plus_court]
+            for sommet_arrivee in liste_sommet_arrivee:
+                if not dic_distance_sommet[sommet_arrivee] == math.inf and \
+                        dic_distance_sommet[sommet_arrivee] < distance_chemin_le_plus_court:
+                    chemin_le_plus_court = dic_chemin_sommet[sommet_arrivee]
+                    distance_chemin_le_plus_court = dic_distance_sommet[sommet_arrivee]
+
         return chemin_le_plus_court
