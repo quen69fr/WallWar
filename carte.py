@@ -239,7 +239,7 @@ class Carte:
         for xi in range(nb_image_x):
             for yi in range(nb_image_y):
                 ecran_monde.blit(self.image_fond, (x + xi * self.largeur_image_fond, y + yi * self.hauteur_image_fond))
-        # self.affiche_garph(ecran_monde)
+        self.affiche_garph(ecran_monde)
 
     # -------------------------------------------------
     #                    Conversions

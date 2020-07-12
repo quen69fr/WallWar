@@ -65,9 +65,7 @@ class ElementMobile(Element):
             if i_pos == i_objectif and j_pos == j_objectif:
                 self.chemin_liste_objectifs = [(x_obj, y_obj)]
             else:
-                if case_obj == TYPE_CASE_PLEINE:
-                    pass  # TODO
-                else:
+                if not case_obj == TYPE_CASE_PLEINE:
                     self.chemin_liste_objectifs = self.calcul_new_chemin_grille_objectif_xy(x_obj, y_obj, i_pos, j_pos,
                                                                                             i_objectif, j_objectif)
             if len(self.chemin_liste_objectifs) > 0:
@@ -166,20 +164,20 @@ class ElementMobile(Element):
     def calcul_new_chemin_grille_objectif_xy(self, x_carte: int, y_carte: int, i_pos: int, j_pos: int,
                                              i_objectif: int, j_objectif: int):
         chemin_ij = self.carte.graph.trouve_trajectoire_ij(i_pos, j_pos, [(i_objectif, j_objectif)])
-
-        chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
-        del chemin_xy[0]
-        chemin_xy[-1] = (x_carte, y_carte)
-
-        return chemin_xy
+        if len(chemin_ij) > 0:
+            chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
+            del chemin_xy[0]
+            chemin_xy[-1] = (x_carte, y_carte)
+            return chemin_xy
+        return []
 
     def calcul_new_chemin_grille_liste_objectifs(self, i_pos: int, j_pos: int, liste_ij_objectif: list):
         chemin_ij = self.carte.graph.trouve_trajectoire_ij(i_pos, j_pos, liste_ij_objectif)
-
-        chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
-        del chemin_xy[0]
-
-        return chemin_xy
+        if len(chemin_ij) > 0:
+            chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
+            del chemin_xy[0]
+            return chemin_xy
+        return []
 
     # -------------------------------------------------
     #                     Evenements

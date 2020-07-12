@@ -159,22 +159,23 @@ class Monde:
                         d2 = dx ** 2 + dy ** 2
                         if d2 < d_max ** 2:
                             d = math.sqrt(d2)
-                            somme_masses = personne1.masse_relative + personne2.masse_relative
-                            coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / d
-                            for personne in [personne2, personne1]:
-                                # if personne.objectif is None:
-                                coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
-                                if personne == personne1:
-                                    coef_relatif *= -1
-                                personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
-                                i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
-                                new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte, personne.y_sur_carte,
-                                                                           i, j)
-                                if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
-                                    personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
-                                if personne.objectif is not None:
-                                    x, y = personne.objectif
-                                    personne.oriente_vers_point(x, y)
+                            if not d == 0:
+                                somme_masses = personne1.masse_relative + personne2.masse_relative
+                                coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / d
+                                for personne in [personne2, personne1]:
+                                    # if personne.objectif is None:
+                                    coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
+                                    if personne == personne1:
+                                        coef_relatif *= -1
+                                    personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
+                                    i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
+                                    new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte, personne.y_sur_carte,
+                                                                               i, j)
+                                    if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
+                                        personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
+                                    if personne.objectif is not None:
+                                        x, y = personne.objectif
+                                        personne.oriente_vers_point(x, y)
 
     # -------------------------------------------------
     #                      Sources
