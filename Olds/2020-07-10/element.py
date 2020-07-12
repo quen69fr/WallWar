@@ -1,7 +1,6 @@
 # coding: utf-8
 
 from carte import *
-import copy
 
 
 class Element:

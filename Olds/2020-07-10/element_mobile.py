@@ -44,14 +44,12 @@ class ElementMobile(Element):
         else:
             if len(self.chemin_liste_objectifs) > 0:
                 x, y = self.chemin_liste_objectifs[-1]
-            else:
-                x, y = self.objectif
-            i, j = self.carte.xy_carte_to_ij_case(x, y)
-            if self.carte.get_cases_grille(i, j) == TYPE_CASE_PLEINE:
-                self.objectif = None
-                self.chemin_liste_objectifs = []
-            else:
-                self.new_objectif(x, y, modification_chemin_seulement=True)
+                i, j = self.carte.xy_carte_to_ij_case(x, y)
+                if self.carte.get_cases_grille(i, j) == TYPE_CASE_PLEINE:
+                    self.objectif = None
+                    self.chemin_liste_objectifs = []
+                else:
+                    self.new_objectif(x, y, modification_chemin_seulement=True)
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
                      j_objectif: int = None, modification_chemin_seulement=False):
@@ -65,21 +63,12 @@ class ElementMobile(Element):
             if i_pos == i_objectif and j_pos == j_objectif:
                 self.chemin_liste_objectifs = [(x_obj, y_obj)]
             else:
-                if case_obj == TYPE_CASE_PLEINE:
-                    pass  # TODO
-                else:
-                    self.chemin_liste_objectifs = self.calcul_new_chemin_grille_objectif_xy(x_obj, y_obj, i_pos, j_pos,
-                                                                                            i_objectif, j_objectif)
+                self.chemin_liste_objectifs = self.calcul_new_chemin_grille_objectif_xy(x_obj, y_obj, i_pos, j_pos,
+                                                                                        i_objectif, j_objectif)
+                if case_obj == TYPE_CASE_PLEINE and len(self.chemin_liste_objectifs) > 0:
+                    del self.chemin_liste_objectifs[-1]
             if len(self.chemin_liste_objectifs) > 0:
                 self.objectif_suivant()
-
-    def new_objectif_point_relay(self):
-        i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
-
-        self.chemin_liste_objectifs = self.calcul_new_chemin_grille_liste_objectifs(i_pos, j_pos,
-                                                                                    self.carte.get_all_ij_cases_relay())
-        if len(self.chemin_liste_objectifs) > 0:
-            self.objectif_suivant()
 
     def oriente_vers_point(self, x_obj, y_obj):
         dx = x_obj - self.x_sur_carte
@@ -113,22 +102,18 @@ class ElementMobile(Element):
 
         if not x_centre_case_obj == x_carte:
             if x_carte > x_centre_case_obj:
-                case = self.carte.get_cases_grille(i_objectif + 1, j_objectif)
-                if case == TYPE_CASE_PLEINE or case == TYPE_CASE_INEXISTANTE:
+                if self.carte.get_cases_grille(i_objectif + 1, j_objectif) == TYPE_CASE_PLEINE:
                     x_carte = x_centre_case_obj
             elif x_carte < x_centre_case_obj:
-                case = self.carte.get_cases_grille(i_objectif - 1, j_objectif)
-                if case == TYPE_CASE_PLEINE or case == TYPE_CASE_INEXISTANTE:
+                if self.carte.get_cases_grille(i_objectif - 1, j_objectif) == TYPE_CASE_PLEINE:
                     x_carte = x_centre_case_obj
 
         if not y_centre_case_obj == y_carte:
             if y_carte > y_centre_case_obj:
-                case = self.carte.get_cases_grille(i_objectif, j_objectif + 1)
-                if case == TYPE_CASE_PLEINE or case == TYPE_CASE_INEXISTANTE:
+                if self.carte.get_cases_grille(i_objectif, j_objectif + 1) == TYPE_CASE_PLEINE:
                     y_carte = y_centre_case_obj
             else:
-                case = self.carte.get_cases_grille(i_objectif, j_objectif - 1)
-                if case == TYPE_CASE_PLEINE or case == TYPE_CASE_INEXISTANTE:
+                if self.carte.get_cases_grille(i_objectif, j_objectif - 1) == TYPE_CASE_PLEINE:
                     y_carte = y_centre_case_obj
 
         if not y_centre_case_obj == y_carte and not x_centre_case_obj == x_carte:
@@ -165,19 +150,105 @@ class ElementMobile(Element):
 
     def calcul_new_chemin_grille_objectif_xy(self, x_carte: int, y_carte: int, i_pos: int, j_pos: int,
                                              i_objectif: int, j_objectif: int):
-        chemin_ij = self.carte.graph.trouve_trajectoire_ij(i_pos, j_pos, [(i_objectif, j_objectif)])
+        # 1. On récupère la grille vierge
+        # 2. On donne à chaque case sa distance l'ojectif (cercles concentriques jusqu'à que l'on atteigne la case dans
+        #                                                  laquelle l'element mobil se trouve)
+        # 3. FONCTION : trouve_chemin_grille :
+        #       a. On trouve le chemin grâce à la grille
+        #       b. On donne pour chaque case ij ses coordonne xy sur la carte
+        #       c. On affine la trajectoire
 
+        # --- 1 ---
+        grille = copy.deepcopy(self.carte.grille_vierge)
+        grille[i_objectif][j_objectif] = 0
+
+        # --- 2 ---
+        liste_cases_pos_bord = [(0, i_objectif, j_objectif)]
+        racine_de_deux = math.sqrt(2)
+        fin = False
+        while not fin and not len(liste_cases_pos_bord) == 0:
+            valeur_centre, i_centre, j_centre = min(liste_cases_pos_bord)
+            liste_i = [i_centre - 1, i_centre, i_centre + 1]
+            liste_j = [j_centre - 1, j_centre, j_centre + 1]
+            # random.shuffle(liste_i)
+            # random.shuffle(liste_j)
+            for i in liste_i:
+                for j in liste_j:
+                    if self.carte.ij_case_existe(i, j) and grille[i][j] == CASE_VIDE_GRILLE_CHEMIN:
+                        if i_centre == i or j_centre == j:
+                            valeur = valeur_centre + 1
+                        else:
+                            # On n'accepte pas les diagonales si il y a une case pleine à coté
+                            if grille[i_centre][j] == CASE_PLEINE_GRILLE_CHEMIN or \
+                                    grille[i][j_centre] == CASE_PLEINE_GRILLE_CHEMIN:
+                                continue
+                            valeur = valeur_centre + racine_de_deux
+                        grille[i][j] = valeur
+                        if i == i_pos and j == j_pos:
+                            fin = True
+                            break
+                        liste_cases_pos_bord.append((valeur, i, j))
+            liste_cases_pos_bord.remove((valeur_centre, i_centre, j_centre))
+
+        # --- 3 ---
+        return self.trouve_chemin_grille(grille, i_pos, j_pos, x_carte, y_carte)
+
+    def new_objectif_point_relay(self):
+        # 1. On récupère la grille des points relays de la carte
+        # 2. FONCTION : trouve_chemin_grille :
+        #       a. On trouve le chemin grâce à la grille
+        #       b. On affine la trajectoire
+        #       c. On donne pour chaque case ij ses coordonne xy sur la carte
+
+        i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
+        self.chemin_liste_objectifs = self.trouve_chemin_grille(self.carte.grille_points_relay, i_pos, j_pos)
+        if len(self.chemin_liste_objectifs) > 0:
+            self.objectif_suivant()
+
+    def trouve_chemin_grille(self, grille: list, i_pos: int, j_pos: int, x_obj: int = None, y_obj: int = None):
+        # a. On trouve le chemin grâce à la grille
+        # b. On donne pour chaque case ij ses coordonne xy sur la carte
+        # c. On affine la trajectoire
+
+        # --- a ---
+        chemin_ij = [(i_pos, j_pos)]
+        for i_centre, j_centre in chemin_ij:
+            i_min, j_min = -1, -1
+            val_min = math.inf
+            liste_i = [i_centre - 1, i_centre, i_centre + 1]
+            liste_j = [j_centre - 1, j_centre, j_centre + 1]
+            # random.shuffle(liste_i)
+            # random.shuffle(liste_j)
+            for i in liste_i:
+                for j in liste_j:
+                    if not (i == i_centre and j == j_centre):
+                        if self.carte.ij_case_existe(i, j):
+                            val = grille[i][j]
+                            if not val == CASE_VIDE_GRILLE_CHEMIN and not val == CASE_PLEINE_GRILLE_CHEMIN \
+                                    and val < val_min and (i_centre == i or j_centre == j or
+                                                           not (grille[i_centre][j] == CASE_PLEINE_GRILLE_CHEMIN
+                                                                or grille[i][j_centre] == CASE_PLEINE_GRILLE_CHEMIN)):
+                                # Pas de diagonale si il y un bloc à côté.
+                                val_min = val
+                                i_min, j_min = i, j
+            if i_min >= 0:
+                chemin_ij.append((i_min, j_min))
+                if val_min == 0:
+                    break
+
+        del chemin_ij[0]
+
+        # --- b ---
+        for i_o, j_o in chemin_ij[:]:
+            if not ((i_o, j_o) in self.carte.liste_coordonnees_objectifs_possibles or (i_o, j_o) == chemin_ij[-1]):
+                chemin_ij.remove((i_o, j_o))
+
+        # --- c ---
         chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
-        del chemin_xy[0]
-        chemin_xy[-1] = (x_carte, y_carte)
 
-        return chemin_xy
-
-    def calcul_new_chemin_grille_liste_objectifs(self, i_pos: int, j_pos: int, liste_ij_objectif: list):
-        chemin_ij = self.carte.graph.trouve_trajectoire_ij(i_pos, j_pos, liste_ij_objectif)
-
-        chemin_xy = [self.carte.ij_case_to_centre_xy_carte(i, j) for i, j in chemin_ij]
-        del chemin_xy[0]
+        if len(chemin_xy) > 0:
+            if x_obj is not None and y_obj is not None:
+                chemin_xy[-1] = (x_obj, y_obj)
 
         return chemin_xy
 
@@ -231,8 +302,6 @@ class ElementMobile(Element):
         rayon = int((self.rayon + ANNEAU_SELECTION_DISTANCE) * self.carte.coef_zoom)
         pygame.gfxdraw.aacircle(screen, x_relatif, y_relatif, rayon, COULEUR_ELEMENT_SELECTION)
         pygame.gfxdraw.aacircle(screen, x_relatif, y_relatif, rayon, COULEUR_ELEMENT_SELECTION)
-
-    def affiche_objectif(self, screen: pygame.Surface):
         if self.objectif is not None:
             a_x_r, a_y_r = None, None
             for x, y in [(self.x_sur_carte, self.y_sur_carte), self.objectif] + self.chemin_liste_objectifs:

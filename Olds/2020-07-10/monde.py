@@ -440,7 +440,6 @@ class Monde:
                 self.element_selectionne.affiche_selectionne(screen, self.carte)
             if isinstance(self.element_selectionne, ElementMobile):
                 self.element_selectionne.affiche_selectionne(screen)
-                self.element_selectionne.affiche_objectif(screen)
                 if isinstance(self.element_selectionne, Soldat):
                     self.element_selectionne.affiche_tireur(screen)
 

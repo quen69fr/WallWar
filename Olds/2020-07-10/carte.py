@@ -1,7 +1,9 @@
 # coding: utf-8
 
-from trajectoires import *
+from drawing_box import *
+import copy
 import random
+import math
 
 
 class Carte:
@@ -33,11 +35,16 @@ class Carte:
         self.set_cote_case_zoom(int(cote_cases * ZOOM_INIT))
 
         self._cote_case_zoom_min = max(math.ceil(self.largeur_ecran / self.nb_cases_i),
-                                       math.ceil(self.hauteur_ecran / self.nb_cases_j))
+                                       math.ceil(self.hauteur_ecran / self.nb_cases_j)) + 1
         self._cote_case_zoom_max = CARTE_COTE_CASE_ZOOM_MAX
 
         self._grille = [[TYPE_CASE_VIDE for _ in range(self.nb_cases_j)] for _ in range(self.nb_cases_i)]
-        self._graph = Graph(self.nb_cases_j, self.nb_cases_j)
+        self._grille_vierge = [[CASE_VIDE_GRILLE_CHEMIN for _ in range(self.nb_cases_j)]
+                               for _ in range(self.nb_cases_i)]
+        self._grille_points_relay = copy.deepcopy(self._grille_vierge)
+        self.new_grille_points_relay = True
+        self._liste_coordonnees_objectifs_possibles = []
+        self.new_liste_coordonnees_objectifs_possibles = True
 
     # -------------------------------------------------
     #                       Grille
@@ -45,23 +52,32 @@ class Carte:
     def set_cases_grille(self, type_cases, liste_cases):
         for i, j in liste_cases:
             self._grille[i][j] = type_cases
-        if type_cases == TYPE_CASE_PLEINE:
-            self._graph.add_case_pelines(liste_cases)
-        else:
-            self._graph.add_case_vide(liste_cases)
+            if type_cases == TYPE_CASE_PLEINE:
+                self._grille_vierge[i][j] = CASE_PLEINE_GRILLE_CHEMIN
+                self.new_liste_coordonnees_objectifs_possibles = True
+            else:
+                self._grille_vierge[i][j] = CASE_VIDE_GRILLE_CHEMIN
 
     def get_cases_grille(self, i, j):
         if self.ij_case_existe(i, j):
             return self._grille[i][j]
         return TYPE_CASE_INEXISTANTE
 
-    def get_all_ij_cases_relay(self):
+    def get_all_cases_relay(self):
         liste_case_relay = []
         for i, colone in enumerate(self._grille):
             for j, case in enumerate(colone):
                 if case == TYPE_CASE_S_RELAIS:
                     liste_case_relay.append((i, j))
         return liste_case_relay
+
+    def get_all_cases_pleines(self):
+        liste_case_pleines = []
+        for i, colone in enumerate(self._grille):
+            for j, case in enumerate(colone):
+                if case == TYPE_CASE_PLEINE:
+                    liste_case_pleines.append((i, j))
+        return liste_case_pleines
 
     def add_source(self, liste_cases_sources: list):
         self.set_cases_grille(TYPE_CASE_SOURCE, liste_cases_sources)
@@ -71,17 +87,88 @@ class Carte:
         self.set_cases_grille(TYPE_CASE_PLEINE, liste_cases_pleines)
         self.set_cases_grille(TYPE_CASE_S_RELAIS if batiment_construit else TYPE_CASE_S_DEPOS, liste_cases_relais)
         self.set_cases_grille(TYPE_CASE_S_DEPOS, liste_cases_depos)
+        self.new_grille_points_relay = True
 
     def add_cases_relais_batiment(self, liste_cases_relais: list):
         self.set_cases_grille(TYPE_CASE_S_RELAIS, liste_cases_relais)
+        self.new_grille_points_relay = True
 
     def clear_case(self, liste_cases_vides: list):
+        for i, j in liste_cases_vides:
+            if self.get_cases_grille(i, j) == TYPE_CASE_PLEINE:
+                self.new_grille_points_relay = True
+                self.new_liste_coordonnees_objectifs_possibles = True
         self.set_cases_grille(TYPE_CASE_VIDE, liste_cases_vides)
 
+    def update_grille_points_relay(self):
+        self._grille_points_relay = copy.deepcopy(self._grille_vierge)
+        liste_cases_pos_bord = []
+        for i, j in self.get_all_cases_relay():
+            liste_cases_pos_bord.append((0, i, j))
+            self._grille_points_relay[i][j] = 0
+        racine_de_deux = math.sqrt(2)
+        while not len(liste_cases_pos_bord) == 0:
+            valeur_centre, i_centre, j_centre = min(liste_cases_pos_bord)
+            for i in [i_centre - 1, i_centre, i_centre + 1]:
+                for j in [j_centre - 1, j_centre, j_centre + 1]:
+                    if self.ij_case_existe(i, j) and self._grille_points_relay[i][j] == -1:
+                        if i_centre == i or j_centre == j:
+                            valeur = valeur_centre + 1
+                        else:
+                            # On n'accepte pas les diagonales si il y a une case pleine à coté
+                            if self._grille_points_relay[i_centre][j] == -99 or \
+                                    self._grille_points_relay[i][j_centre] == -99:
+                                continue
+                            valeur = valeur_centre + racine_de_deux
+                        self._grille_points_relay[i][j] = valeur
+                        liste_cases_pos_bord.append((valeur, i, j))
+            liste_cases_pos_bord.remove((valeur_centre, i_centre, j_centre))
+
+    def update_liste_coordonnees_objectifs_possibles(self):
+        self._liste_coordonnees_objectifs_possibles = []
+        for i, j in self.get_all_cases_pleines():
+            liste_coordonnees_sommets = [(i - 1, j - 1), (i - 1, j + 1), (i + 1, j - 1), (i + 1, j + 1)]
+            for i_s, j_s in liste_coordonnees_sommets[:]:
+                if (not self.ij_case_existe(i_s, j_s)) or self.grille_vierge[i_s][j_s] == CASE_PLEINE_GRILLE_CHEMIN \
+                        or (i_s, j_s) in self._liste_coordonnees_objectifs_possibles:
+                    liste_coordonnees_sommets.remove((i_s, j_s))
+            if len(liste_coordonnees_sommets) == 0:
+                continue
+            for i_a, j_a in [(i + 1, j), (i - 1, j), (i, j - 1), (i, j + 1)]:
+                if self.grille_vierge[i_a][j_a] == CASE_PLEINE_GRILLE_CHEMIN:
+                    if self.ij_case_existe(i_a, j_a):
+                        for i_s, j_s in liste_coordonnees_sommets[:]:
+                            if i_a == i_s or j_a == j_s:
+                                liste_coordonnees_sommets.remove((i_s, j_s))
+                                if len(liste_coordonnees_sommets) == 0:
+                                    break
+                        if len(liste_coordonnees_sommets) == 0:
+                            break
+            if len(liste_coordonnees_sommets) == 0:
+                continue
+            self._liste_coordonnees_objectifs_possibles += liste_coordonnees_sommets
+
     @property
-    def graph(self):
-        self._graph.update()
-        return self._graph
+    def grille(self):
+        return self._grille
+
+    @property
+    def grille_vierge(self):
+        return self._grille_vierge
+
+    @property
+    def grille_points_relay(self):
+        if self.new_grille_points_relay:
+            self.update_grille_points_relay()
+            self.new_grille_points_relay = False
+        return self._grille_points_relay
+
+    @property
+    def liste_coordonnees_objectifs_possibles(self):
+        if self.new_liste_coordonnees_objectifs_possibles:
+            self.update_liste_coordonnees_objectifs_possibles()
+            self.new_liste_coordonnees_objectifs_possibles = False
+        return self._liste_coordonnees_objectifs_possibles
 
     # -------------------------------------------------
     #                       Carte
@@ -184,6 +271,7 @@ class Carte:
         return False
 
     def update_deplacement(self, x_souris: int, y_souris: int):
+        # x_souris_relatif, y_souris_relatif = self.xy_absolu_to_xy_relatif(x_souris, y_souris)
         self.deplacement_x = 0
         dx = CARTE_MARGE_BORD_DEPLACEMENT - x_souris
         if dx > 0:
@@ -216,16 +304,24 @@ class Carte:
         self.recadre_si_necessaire()
         return True
 
-    def affiche_garph(self, ecran_monde: pygame.Surface):
+    def affiche_liste_coordonnees_objectifs_possibles(self, ecran_monde: pygame.Surface):
         rayon = int(self.cote_case_zoom / 3)
-        width = max(1, int(rayon / 5))
-        for sommet in self.graph.liste_sommets:
-            x, y = self.ij_case_to_centre_xy_relatif(sommet.i, sommet.j)
+        for i, j in self.liste_coordonnees_objectifs_possibles:
+            x, y = self.ij_case_to_centre_xy_relatif(i, j)
             draw_filled_circle(ecran_monde, (x, y), rayon, ROUGE)
-        for arete in self.graph.liste_aretes:
-            x1, y1 = self.ij_case_to_centre_xy_relatif(arete.sommet1.i, arete.sommet1.j)
-            x2, y2 = self.ij_case_to_centre_xy_relatif(arete.sommet2.i, arete.sommet2.j)
-            pygame.draw.line(ecran_monde, BLEU, (x1, y1), (x2, y2), width)
+
+    def affiche_grille_points_relay(self, ecran_monde: pygame.Surface):
+        couleur_max = 50
+        for i, colone in enumerate(self._grille_points_relay):
+            for j, case in enumerate(colone):
+                if self.ij_case_dans_ecran(i, j):
+                    if case == CASE_VIDE_GRILLE_CHEMIN or case == CASE_PLEINE_GRILLE_CHEMIN:
+                        couleur = ROUGE
+                    else:
+                        c = min(int(case / couleur_max * 255), 255)
+                        couleur = (c, c, c)
+                    x, y = self.ij_case_to_coin_xy_relatif(i, j)
+                    pygame.draw.rect(ecran_monde, couleur, (x, y, self._cote_case_zoom, self._cote_case_zoom))
 
     def affiche(self, ecran_monde: pygame.Surface):
         x_camera_zoom = self.x_camera_sur_cadre * self._coef_zoom
@@ -239,7 +335,6 @@ class Carte:
         for xi in range(nb_image_x):
             for yi in range(nb_image_y):
                 ecran_monde.blit(self.image_fond, (x + xi * self.largeur_image_fond, y + yi * self.hauteur_image_fond))
-        # self.affiche_garph(ecran_monde)
 
     # -------------------------------------------------
     #                    Conversions
@@ -357,3 +452,8 @@ class Carte:
                 and 0 <= y / self._coef_zoom + self.y_camera_sur_cadre - self.y_ecran < self.hauteur_totale:
             return True
         return False
+
+    # aleas
+    def ajoute_alea_xy(self, x: int, y: int):
+        return (x + random.randint(- ALEA_MAX_CENTRE_CASE_AUTO, ALEA_MAX_CENTRE_CASE_AUTO),
+                y + random.randint(- ALEA_MAX_CENTRE_CASE_AUTO, ALEA_MAX_CENTRE_CASE_AUTO))
