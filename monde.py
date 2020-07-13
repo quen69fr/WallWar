@@ -100,6 +100,7 @@ class Monde:
         for ennemi in self.liste_ennemis:
             if soldat.point_a_porter_de_tir(ennemi.x_float, ennemi.y_float):
                 soldat.new_cible(ennemi, True)
+                return
 
     def update_personnes(self):
         for personne in self.liste_personnes:
@@ -117,7 +118,7 @@ class Monde:
                             if isinstance(personne.cible, Personne):
                                 self.remove_personne(personne.cible)
                             elif isinstance(personne.cible, Ennemi):
-                                pass  # TODO
+                                pass
                             elif isinstance(personne.cible, Batiment):
                                 self.remove_batiement_constuit(personne.cible)
                             personne.tireur.nb_destructions += 1
@@ -139,7 +140,7 @@ class Monde:
         for batiment in self.liste_batiments_constuits:
             i_clic, j_clic = self.carte.xy_carte_to_ij_case(x_carte_clic, y_carte_clic)
             if batiment.clic(i_clic, j_clic):
-                soldat.new_cible(batiment, pos_cible_fixe=(x_carte_clic, y_carte_clic))
+                soldat.new_cible(batiment)
                 return
         for personne in self.liste_personnes:
             if not personne == soldat and personne.clic(x_carte_clic, y_carte_clic):
@@ -169,8 +170,8 @@ class Monde:
                                         coef_relatif *= -1
                                     personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
                                     i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
-                                    new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte, personne.y_sur_carte,
-                                                                               i, j)
+                                    new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte,
+                                                                               personne.y_sur_carte, i, j)
                                     if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
                                         personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
                                     if personne.objectif is not None:

@@ -72,12 +72,17 @@ class ElementMobile(Element):
                 self.objectif_suivant()
 
     def new_objectif_point_relay(self):
-        i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
+        self.new_objectif_liste_cases(self.carte.get_all_ij_cases_relay())
 
-        self.chemin_liste_objectifs = self.calcul_new_chemin_grille_liste_objectifs(i_pos, j_pos,
-                                                                                    self.carte.get_all_ij_cases_relay())
-        if len(self.chemin_liste_objectifs) > 0:
-            self.objectif_suivant()
+    def new_objectif_liste_cases(self, liste_cases_objectifs: list):
+        if len(liste_cases_objectifs) > 0:
+            i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
+
+            self.chemin_liste_objectifs = self.calcul_new_chemin_grille_liste_objectifs(i_pos, j_pos,
+                                                                                        liste_cases_objectifs)
+
+            if len(self.chemin_liste_objectifs) > 0:
+                self.objectif_suivant()
 
     def oriente_vers_point(self, x_obj, y_obj):
         dx = x_obj - self.x_sur_carte

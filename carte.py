@@ -126,6 +126,10 @@ class Carte:
         return self._cote_case_zoom
 
     @property
+    def cote_case(self):
+        return self._cote_case
+
+    @property
     def coef_zoom(self):
         return self._coef_zoom
 
@@ -357,3 +361,23 @@ class Carte:
                 and 0 <= y / self._coef_zoom + self.y_camera_sur_cadre - self.y_ecran < self.hauteur_totale:
             return True
         return False
+
+    # aléas
+    def ajoute_aleas_xy_carte(self, x: int, y: int, alea_max: int):
+        if alea_max == 0:
+            return x, y
+        i, j = self.xy_carte_to_ij_case(x, y)
+        type_case = self.get_cases_grille(i, j)
+        x_alea, y_alea = x, y
+        if type_case == TYPE_CASE_VIDE:
+            type_case_alea = None
+            while not type_case_alea == TYPE_CASE_VIDE:
+                x_alea, y_alea = x + random.randint(- alea_max, alea_max), y + random.randint(- alea_max, alea_max)
+                i_alea, j_alea = self.xy_carte_to_ij_case(x_alea, y_alea)
+                type_case_alea = self.get_cases_grille(i_alea, j_alea)
+        else:
+            i_alea, j_alea = 0, 0
+            while not (i == i_alea and j == j_alea):
+                x_alea, y_alea = x + random.randint(- alea_max, alea_max), y + random.randint(- alea_max, alea_max)
+                i_alea, j_alea = self.xy_carte_to_ij_case(x_alea, y_alea)
+        return x_alea, y_alea

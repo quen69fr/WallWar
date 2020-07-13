@@ -4,6 +4,8 @@ from element import *
 
 
 class Tireur:
+    dic_liste_cases_relatives_porter_tir = {}
+
     def __init__(self, type_element):
         self.type_element = type_element
         self.delay_dernier_tir = 0
@@ -26,11 +28,34 @@ class Tireur:
     def affiche(self, screen: pygame.Surface, carte: Carte, x_centre_sur_carte, y_centre_sur_carte):
         x_relatif, y_relatif = carte.xy_carte_to_xy_relatif(x_centre_sur_carte, y_centre_sur_carte)
         rayon = int(self.portee_tir * carte.coef_zoom)
-        couleur = COULEUR_PORTER_TIT_TIREUR_SELECTION
+        couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION
         draw_filled_circle(screen, (x_relatif, y_relatif), rayon, couleur)
         if len(couleur) == 2:
-            couleur = COULEUR_PORTER_TIT_TIREUR_SELECTION[0]
+            couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION[0]
         pygame.gfxdraw.aacircle(screen, x_relatif, y_relatif, rayon, couleur)
+
+    def get_cases_relative_porter_tir(self, cote_case):
+        if self.force_tir not in Tireur.dic_liste_cases_relatives_porter_tir:
+            liste_cases = []
+            porter_tir_sur_cote_case = self.portee_tir / cote_case
+            nb_cases_a_tester = int(porter_tir_sur_cote_case - 0.5)
+
+            liste_cases.append((0, 0))
+            for n in range(1, nb_cases_a_tester + 1):
+                liste_cases += [(0, n), (0, - n), (n, 0), (- n, 0)]
+
+            for i in range(1, nb_cases_a_tester + 1):
+                for j in range(i, nb_cases_a_tester + 1):
+                    if (i + 0.5) ** 2 + (j + 0.5) ** 2 <= porter_tir_sur_cote_case ** 2:
+                        if i == j:
+                            liste_cases += [(i, j), (- i, j), (i, - j), (- i, - j)]
+                        else:
+                            liste_cases += [(i, j), (- i, j), (i, - j), (- i, - j),
+                                            (j, i), (- j, i), (j, - i), (- j, - i)]
+
+            Tireur.dic_liste_cases_relatives_porter_tir[self.force_tir] = liste_cases
+
+        return Tireur.dic_liste_cases_relatives_porter_tir[self.force_tir]
 
     @property
     def force_tir(self):

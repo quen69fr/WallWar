@@ -30,8 +30,8 @@ class Tireur:
     def affiche(self, screen: pygame.Surface, carte: Carte, x_centre_sur_carte, y_centre_sur_carte):
         x_relatif, y_relatif = carte.xy_carte_to_xy_relatif(x_centre_sur_carte, y_centre_sur_carte)
         rayon = int(self.portee_tir * carte.coef_zoom)
-        couleur = COULEUR_PORTER_TIT_TIREUR_SELECTION
+        couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION
         draw_filled_circle(screen, (x_relatif, y_relatif), rayon, couleur)
         if len(couleur) == 2:
-            couleur = COULEUR_PORTER_TIT_TIREUR_SELECTION[0]
+            couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION[0]
         pygame.gfxdraw.aacircle(screen, x_relatif, y_relatif, rayon, couleur)
