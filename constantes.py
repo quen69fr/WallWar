@@ -58,7 +58,7 @@ DEFAULT_POLICE = 'Font/freesansbold.ttf'
 # =============
 FPS = 100
 CAPTION = 'WallWar'
-FULL_SCREEN = False
+FULL_SCREEN = True
 
 LARGEUR = 1360
 HAUTEUR = 700
@@ -127,6 +127,32 @@ TYPE_EXPLOSION_MOYENNE = 51
 TYPE_EXPLOSION_GROSSE = 52
 
 TYPE_AMELIORATION_PORTEURS_COMPTENU = 60
+TYPE_AMELIORATION_COTINEURS_VITESSE = 61
+TYPE_AMELIORATION_DEBLOQUE_PORTEURS = 62
+TYPE_AMELIORATION_PORTEURS_VIES = 63
+TYPE_AMELIORATION_PORTEURS_VIES_2 = 64
+TYPE_AMELIORATION_CHARGEURS_COMPTENU = 65
+TYPE_AMELIORATION_DEBLOQUE_CHARGEURS = 66
+TYPE_AMELIORATION_CHARGEURS_VITESSE = 67
+TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1 = 68
+TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2 = 69
+TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3 = 70
+TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4 = 71
+TYPE_AMELIORATION_SOLDATS_VIES_1 = 72
+TYPE_AMELIORATION_SOLDATS_VIES_2 = 73
+TYPE_AMELIORATION_SOLDATS_VIES_3 = 74
+TYPE_AMELIORATION_SOLDATS_VIES_4 = 75
+TYPE_AMELIORATION_SOLDATS_VITESSE_1 = 76
+TYPE_AMELIORATION_SOLDATS_VITESSE_2 = 77
+TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS = 78
+TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1 = 79
+TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2 = 80
+TYPE_AMELIORATION_DEBLOQUE_TANK = 81
+TYPE_AMELIORATION_TANKS_PORTEE_TIR_1 = 82
+TYPE_AMELIORATION_TANKS_PORTEE_TIR_2 = 83
+TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE = 84
+TYPE_AMELIORATION_BATIMENT_COMPTENU = 85
+TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES = 86
 
 
 # III. La description du monde (init)
@@ -136,21 +162,21 @@ NB_CASE_Y_GRILLE = 100
 COTE_CASES_GRILLE = 60
 ZOOM_INIT = 0.5
 
-NB_ARGENT_INIT = 150
+NB_ARGENT_INIT = 100
 NB_LIQUIDE_INIT = 50
 LISTE_BATIMENTS_INIT = [((8, 8), TYPE_BATIMENT_BASE),
                         ((18, 3), TYPE_BATIMENT_ENTREPOT)]
 LISTE_SOURCES_INIT = [([(0, 3), (0, 4), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (2, 5),
-                        (2, 2), (2, 3), (3, 3), (2, 4)], TYPE_SOURCE_MINERAI, 1873),
+                        (2, 2), (2, 3), (3, 3), (2, 4)], TYPE_SOURCE_MINERAI, 3873),
                       ([(50, 50), (51, 51), (50, 51), (51, 50), (52, 51),
-                        (51, 52), (52, 52)], TYPE_SOURCE_MINERAI, 500),
-                      ([(12, 1), (12, 2), (12, 3), (13, 2), (13, 3), (14, 2)], TYPE_SOURCE_LIQUIDE, 662)]
-LISTE_PERSONNE_INIT = [(TYPE_PERSONNE_CHARGEUR, 720, 360),
-                       (TYPE_PERSONNE_PORTEUR, 500, 360),
-                       (TYPE_PERSONNE_COLTINEUR, 440, 240),
-                       (TYPE_PERSONNE_COLTINEUR, 600, 260),
+                        (51, 52), (52, 52)], TYPE_SOURCE_MINERAI, 8475),
+                      ([(12, 1), (12, 2), (12, 3), (13, 2), (13, 3), (14, 2)], TYPE_SOURCE_LIQUIDE, 2162)]
+LISTE_PERSONNE_INIT = [(TYPE_PERSONNE_COLTINEUR, 480, 290),
+                       (TYPE_PERSONNE_COLTINEUR, 480, 210),
+                       (TYPE_PERSONNE_PORTEUR, 560, 210),
+                       (TYPE_PERSONNE_CHARGEUR, 560, 290),
                        (TYPE_PERSONNE_TIRAILLEUR, 800, 800),
-                       (TYPE_PERSONNE_SOLDAT, 720, 800),
+                       (TYPE_PERSONNE_TANK, 720, 800),
                        (TYPE_PERSONNE_SOLDAT, 720, 720),
                        (TYPE_PERSONNE_SOLDAT, 800, 720)]
 
@@ -285,20 +311,20 @@ PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE = 27
 DIC_ELEMENTS = {
     # Tous les éléments :
     PARAM_A_VIES: {
-        TYPE_BATIMENT_BASE: 600,
-        TYPE_BATIMENT_ENTREPOT: 500,
-        TYPE_BATIMENT_GUILDE: 200,
-        TYPE_BATIMENT_LABO: 200,
-        TYPE_BATIMENT_CENTRE: 200,
-        TYPE_BATIMENT_TOURELLE: 250,
-        TYPE_BATIMENT_CASERNE: 200,
-        TYPE_BATIMENT_MURAILLE: 500,
-        TYPE_PERSONNE_PORTEUR: 50,
-        TYPE_PERSONNE_COLTINEUR: 20,
-        TYPE_PERSONNE_CHARGEUR: 50,
-        TYPE_PERSONNE_SOLDAT: 40,
-        TYPE_PERSONNE_TIRAILLEUR: 50,
-        TYPE_PERSONNE_TANK: 80
+        TYPE_BATIMENT_BASE: 2500,
+        TYPE_BATIMENT_ENTREPOT: 1500,
+        TYPE_BATIMENT_GUILDE: 2000,
+        TYPE_BATIMENT_LABO: 1800,
+        TYPE_BATIMENT_CASERNE: 2200,
+        TYPE_BATIMENT_CENTRE: 1800,
+        TYPE_BATIMENT_TOURELLE: 2000,
+        TYPE_BATIMENT_MURAILLE: 2000,
+        TYPE_PERSONNE_PORTEUR: 300,
+        TYPE_PERSONNE_COLTINEUR: 200,
+        TYPE_PERSONNE_CHARGEUR: 500,
+        TYPE_PERSONNE_SOLDAT: 400,
+        TYPE_PERSONNE_TIRAILLEUR: 500,
+        TYPE_PERSONNE_TANK: 800
     },
     PARAM_F_NOM: {
         TYPE_BATIMENT_BASE: 'Base',
@@ -325,33 +351,36 @@ DIC_ELEMENTS = {
                              "liquide et surtout l'argent !"],
         TYPE_BATIMENT_ENTREPOT: ["    L'entrepot est le seule batiment ",
                                  "autre que la base qui vous permet ",
-                                 "de créer des places (10 et la base ",
-                                 "n'en créé que 5) afins de construire",
-                                 " de nouvelles personnes. Chaque ",
-                                 "personne à besoin d'une place !"],
+                                 "de créer libérer de la place. En ",
+                                 "effet, il vous permet d'accueillir de ",
+                                 "nouvelles personnes qui occupent ",
+                                 "un nombre de place(s) spécifique."],
         TYPE_BATIMENT_GUILDE: ["    La Guilde permet de créer et ",
-                               "d'améliorer des porteurs qui sont ",
+                               "d'améliorer les porteurs qui sont ",
                                "indispensables pour récolter les ",
-                               "ressource et pour les transporter ",
-                               "vers n'importe tous vos batiments. "],
+                               "ressources et pour les transporter ",
+                               "vers tous vos batiments. Le Labo "
+                               "vous permettra de les améliorer. "],
         TYPE_BATIMENT_LABO: ["    Le Labo vous permet d'améliorer ",
-                             "certines capacités de vos person-",
-                             "nages et de vos batiments. Celles-",
-                             "ci vous seront cruciales pour ",
-                             "résister contre l'envahisseur."],
+                             "certines capacités de vos porteurs. ",
+                             "Celles-ci vous permet donc de  ",
+                             "vous enrichire plus rapidement et ",
+                             "d'acclérer les flux d'argent entre ",
+                             "vos différents batiments."],
         TYPE_BATIMENT_CASERNE: ["    La Caserne est le batiment qui ",
-                                "dédier à la construction et l'en-",
-                                "trainement de vos soldats. Sans ",
-                                "celui-ci, vos défences sont très ",
-                                "limitées et affaiblies."],
+                                "dédier à la construction, l'entrai-",
+                                "nement et l'amélioration de vos ",
+                                "soldats. Sans celui-ci, vous ne ",
+                                "serez pas en mesure de créer des ",
+                                "sodats pour vous défendre !"],
         TYPE_BATIMENT_CENTRE: ["    Le Centre est un batiment incon-",
                                "tournable. Il vous permet en effet ",
                                "de renforcer vos défences et d'amé-",
                                "liorer considérablement vos armes ",
                                "d'attaque. Seules ces amélorations ",
                                "vous permetteront de survivre !"],
-        TYPE_BATIMENT_TOURELLE: ["    La Tourelle ... "],  # TODO
-        TYPE_BATIMENT_MURAILLE: ["    La Muraille ... "],  # TODO
+        TYPE_BATIMENT_TOURELLE: ["    La Tourelle ... "],
+        TYPE_BATIMENT_MURAILLE: ["    La Muraille ... "],
         TYPE_PERSONNE_PORTEUR: ["    Le Porteur est le transporteur le ",
                                 "plus résistant, il vous permet de ",
                                 "récolter ou d'apporter du minerai, ",
@@ -369,9 +398,24 @@ DIC_ELEMENTS = {
                                  "autre batiment. Cependant, il ne ",
                                  "peut pas récolter du minerai ou du ",
                                  "liquide."],
-        TYPE_PERSONNE_SOLDAT: ["    Le Soldat ..."],  # TODO
-        TYPE_PERSONNE_TIRAILLEUR: ["    Le Tirailleur ..."],  # TODO
-        TYPE_PERSONNE_TANK: ["    La tank ..."]  # TODO
+        TYPE_PERSONNE_SOLDAT: ["    Le Soldat est le soldat le moins ",
+                               "cher mais c'est de surtout le plus ",
+                               "rapide. Il peut ainsi parourir de ",
+                               "grandes distances en peu de temps ",
+                               "lorsqu'une situation l'exige (pour "
+                               "venir en aide rapidement)."],
+        TYPE_PERSONNE_TIRAILLEUR: ["    Le Tirailleur est un soldat rela-",
+                                   "tivement efficace. Il tir très très ",
+                                   "rapidement et fait ainsi mal à ses ",
+                                   "ennemis. C'est le soldat le plus ",
+                                   "polyvalent. Il est tout aussi per-",
+                                   "formant en attaque qu'en défense. "],
+        TYPE_PERSONNE_TANK: ["    La tank est le soldat le plus ",
+                             "puissant mais aussi le plus lent ! ",
+                             "Sa portée de tir très importante ",
+                             "et sa force de tir impressionnante ",
+                             "compensent ainsi sa lenteur de ",
+                             "déplacement et de recharge ! "]
     },
     PARAM_F_TYPE_EXPLOSION: {
         TYPE_BATIMENT_BASE: TYPE_EXPLOSION_GROSSE,
@@ -459,7 +503,7 @@ DIC_ELEMENTS = {
     },
     PARAM_A_BATIMENT_NB_PLACES: {
         TYPE_BATIMENT_BASE: 5,
-        TYPE_BATIMENT_ENTREPOT: 10,
+        TYPE_BATIMENT_ENTREPOT: 8,
         TYPE_BATIMENT_GUILDE: 0,
         TYPE_BATIMENT_LABO: 0,
         TYPE_BATIMENT_CENTRE: 0,
@@ -470,9 +514,7 @@ DIC_ELEMENTS = {
     PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES: {
         TYPE_BATIMENT_BASE: [],
         TYPE_BATIMENT_ENTREPOT: [],
-        TYPE_BATIMENT_GUILDE: [TYPE_PERSONNE_CHARGEUR,
-                               TYPE_PERSONNE_COLTINEUR,
-                               TYPE_PERSONNE_PORTEUR],
+        TYPE_BATIMENT_GUILDE: [TYPE_PERSONNE_COLTINEUR],
         TYPE_BATIMENT_LABO: [],
         TYPE_BATIMENT_CENTRE: [],
         TYPE_BATIMENT_TOURELLE: [],
@@ -480,13 +522,19 @@ DIC_ELEMENTS = {
         TYPE_BATIMENT_MURAILLE: []
     },
     PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES: {
-        TYPE_BATIMENT_BASE: [],
+        TYPE_BATIMENT_BASE: [TYPE_AMELIORATION_BATIMENT_COMPTENU,
+                             TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES],
         TYPE_BATIMENT_ENTREPOT: [],
-        TYPE_BATIMENT_GUILDE: [TYPE_AMELIORATION_PORTEURS_COMPTENU],
-        TYPE_BATIMENT_LABO: [],
-        TYPE_BATIMENT_CENTRE: [],
+        TYPE_BATIMENT_GUILDE: [TYPE_AMELIORATION_COTINEURS_VITESSE,
+                               TYPE_AMELIORATION_DEBLOQUE_CHARGEURS],
+        TYPE_BATIMENT_LABO: [TYPE_AMELIORATION_DEBLOQUE_PORTEURS,
+                             TYPE_AMELIORATION_PORTEURS_COMPTENU],
+        TYPE_BATIMENT_CENTRE: [TYPE_AMELIORATION_SOLDATS_VIES_1,
+                               TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1],
         TYPE_BATIMENT_TOURELLE: [],
-        TYPE_BATIMENT_CASERNE: [],
+        TYPE_BATIMENT_CASERNE: [TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS,
+                                TYPE_AMELIORATION_DEBLOQUE_TANK,
+                                TYPE_AMELIORATION_SOLDATS_VITESSE_1],
         TYPE_BATIMENT_MURAILLE: []
     },
     # Toutes les constructions (batiments + personnes) :
@@ -515,7 +563,7 @@ DIC_ELEMENTS = {
         TYPE_BATIMENT_CENTRE: 75,
         TYPE_BATIMENT_TOURELLE: 10,
         TYPE_BATIMENT_MURAILLE: 25,
-        TYPE_PERSONNE_PORTEUR: 10,
+        TYPE_PERSONNE_PORTEUR: 15,
         TYPE_PERSONNE_COLTINEUR: 0,
         TYPE_PERSONNE_CHARGEUR: 40,
         TYPE_PERSONNE_SOLDAT: 10,
@@ -525,17 +573,17 @@ DIC_ELEMENTS = {
     PARAM_F_BATIMENT_PERSONNE_DUREE_CONSTRUCTION: {
         TYPE_BATIMENT_BASE: 800,
         TYPE_BATIMENT_ENTREPOT: 400,
-        TYPE_BATIMENT_GUILDE: 350,
-        TYPE_BATIMENT_LABO: 300,
-        TYPE_BATIMENT_CASERNE: 500,
-        TYPE_BATIMENT_CENTRE: 300,
+        TYPE_BATIMENT_GUILDE: 520,
+        TYPE_BATIMENT_LABO: 500,
+        TYPE_BATIMENT_CASERNE: 660,
+        TYPE_BATIMENT_CENTRE: 540,
         TYPE_BATIMENT_TOURELLE: 120,
         TYPE_BATIMENT_MURAILLE: 220,
-        TYPE_PERSONNE_PORTEUR: 300,
-        TYPE_PERSONNE_COLTINEUR: 200,
+        TYPE_PERSONNE_PORTEUR: 330,
+        TYPE_PERSONNE_COLTINEUR: 260,
         TYPE_PERSONNE_CHARGEUR: 800,
-        TYPE_PERSONNE_SOLDAT: 300,
-        TYPE_PERSONNE_TIRAILLEUR: 400,
+        TYPE_PERSONNE_SOLDAT: 340,
+        TYPE_PERSONNE_TIRAILLEUR: 490,
         TYPE_PERSONNE_TANK: 850
     },
     # Tous les éléments mobiles :
@@ -548,8 +596,8 @@ DIC_ELEMENTS = {
         TYPE_PERSONNE_TANK: 'Images/tank.png'
     },
     PARAM_F_ELEMENT_MOBILE_RAYON: {
-        TYPE_PERSONNE_PORTEUR: 32,
-        TYPE_PERSONNE_COLTINEUR: 32,
+        TYPE_PERSONNE_PORTEUR: 31,
+        TYPE_PERSONNE_COLTINEUR: 30,
         TYPE_PERSONNE_CHARGEUR: 36,
         TYPE_PERSONNE_TIRAILLEUR: 36,
         TYPE_PERSONNE_SOLDAT: 29,
@@ -565,11 +613,11 @@ DIC_ELEMENTS = {
     },
     PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT: {
         TYPE_PERSONNE_PORTEUR: 4,
-        TYPE_PERSONNE_COLTINEUR: 5,
+        TYPE_PERSONNE_COLTINEUR: 4,
         TYPE_PERSONNE_CHARGEUR: 1.6,
-        TYPE_PERSONNE_SOLDAT: 4.8,
+        TYPE_PERSONNE_SOLDAT: 4.3,
         TYPE_PERSONNE_TIRAILLEUR: 4,
-        TYPE_PERSONNE_TANK: 1.8
+        TYPE_PERSONNE_TANK: 1.6
     },
     PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE: {
         TYPE_PERSONNE_PORTEUR: 6,
@@ -577,7 +625,7 @@ DIC_ELEMENTS = {
         TYPE_PERSONNE_CHARGEUR: 10,
         TYPE_PERSONNE_SOLDAT: 5,
         TYPE_PERSONNE_TIRAILLEUR: 7,
-        TYPE_PERSONNE_TANK: 12
+        TYPE_PERSONNE_TANK: 20
     },
     # Toutes les personnes
     PARAM_F_PERSONNE_TYPE_CLASS: {
@@ -602,13 +650,13 @@ DIC_ELEMENTS = {
         TYPE_BATIMENT_ENTREPOT: 0,
         TYPE_BATIMENT_GUILDE: 200,
         TYPE_BATIMENT_LABO: 200,
-        TYPE_BATIMENT_CENTRE: 200,
+        TYPE_BATIMENT_CASERNE: 400,
+        TYPE_BATIMENT_CENTRE: 300,
         TYPE_BATIMENT_TOURELLE: 100,
-        TYPE_BATIMENT_CASERNE: 800,
         TYPE_BATIMENT_MURAILLE: 100,
         TYPE_PERSONNE_PORTEUR: 2,
         TYPE_PERSONNE_COLTINEUR: 2,
-        TYPE_PERSONNE_CHARGEUR: 16
+        TYPE_PERSONNE_CHARGEUR: 10
     },
     # Tous les porteurs
     PARAM_A_PORTEUR_PEUT_RECOLTER: {
@@ -628,19 +676,19 @@ DIC_ELEMENTS = {
     },
     # Tous les tireurs (soldats) :
     PARAM_A_TIREUR_FORCE_TIR: {
-        TYPE_PERSONNE_SOLDAT: 4,
-        TYPE_PERSONNE_TIRAILLEUR: 2,
-        TYPE_PERSONNE_TANK: 70
+        TYPE_PERSONNE_SOLDAT: 18,
+        TYPE_PERSONNE_TIRAILLEUR: 10,
+        TYPE_PERSONNE_TANK: 250
     },
     PARAM_A_TIREUR_PORTEE_TIR: {
         TYPE_PERSONNE_SOLDAT: 160,
         TYPE_PERSONNE_TIRAILLEUR: 200,
-        TYPE_PERSONNE_TANK: 350
+        TYPE_PERSONNE_TANK: 250
     },
     PARAM_A_TIREUR_DELAY_TIR: {
         TYPE_PERSONNE_SOLDAT: 20,
-        TYPE_PERSONNE_TIRAILLEUR: 5,
-        TYPE_PERSONNE_TANK: 120
+        TYPE_PERSONNE_TIRAILLEUR: 15,
+        TYPE_PERSONNE_TANK: 110
     },
     PARAM_F_TIREUR_TYPE_EXPLOSION_TIR: {
         TYPE_PERSONNE_SOLDAT: TYPE_EXPLOSION_PETITE,
@@ -663,6 +711,12 @@ NB_CONSTRUCTION_POSSIBLE_MAX = 3
 COEF_RAYONS_PERSONNES_CHEVAUCHEMENT = 0.8
 VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS = 2
 
+ALEA_MAX_PORTEURS_DEPLACEMENT_AUTO = 10
+ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE = 20
+ALEA_MAX_PERSONNES_DEPLACEMENT_SEUL = 0
+ALEA_MAX_PERSONNES_SORTIE_BATIMENT = 10
+ALEA_MAX_PERSONNES_UPDATE_CHEMIN = 0
+
 COULEUR_ELEMENT_SELECTION = ROUGE
 ANNEAU_SELECTION_DISTANCE = 10
 MARGE_OBJECTIF_ATTEIND = 1
@@ -684,27 +738,258 @@ PARAM_AMELIORATION_NOM = 5
 
 DIC_AMELIORATIONS = {
     PARAM_AMELIORATION_PRIX_ARGENT: {
-        TYPE_AMELIORATION_PORTEURS_COMPTENU: 90
+        TYPE_AMELIORATION_PORTEURS_COMPTENU: 120,
+        TYPE_AMELIORATION_COTINEURS_VITESSE: 80,
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: 90,
+        TYPE_AMELIORATION_PORTEURS_VIES: 150,
+        TYPE_AMELIORATION_PORTEURS_VIES_2: 200,
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: 120,
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: 150,
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: 200,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: 150,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: 200,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: 250,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: 300,
+        TYPE_AMELIORATION_SOLDATS_VIES_1: 150,
+        TYPE_AMELIORATION_SOLDATS_VIES_2: 200,
+        TYPE_AMELIORATION_SOLDATS_VIES_3: 250,
+        TYPE_AMELIORATION_SOLDATS_VIES_4: 300,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: 110,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: 140,
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: 100,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: 130,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: 160,
+        TYPE_AMELIORATION_DEBLOQUE_TANK: 150,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: 150,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: 180,
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: 200,
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: 0,
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: 0
     },
     PARAM_AMELIORATION_PRIX_LIQUIDE: {
-        TYPE_AMELIORATION_PORTEURS_COMPTENU: 70
+        TYPE_AMELIORATION_PORTEURS_COMPTENU: 80,
+        TYPE_AMELIORATION_COTINEURS_VITESSE: 50,
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: 70,
+        TYPE_AMELIORATION_PORTEURS_VIES: 100,
+        TYPE_AMELIORATION_PORTEURS_VIES_2: 120,
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: 80,
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: 50,
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: 150,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: 50,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: 100,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: 150,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: 200,
+        TYPE_AMELIORATION_SOLDATS_VIES_1: 50,
+        TYPE_AMELIORATION_SOLDATS_VIES_2: 100,
+        TYPE_AMELIORATION_SOLDATS_VIES_3: 150,
+        TYPE_AMELIORATION_SOLDATS_VIES_4: 200,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: 60,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: 80,
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: 80,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: 80,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: 100,
+        TYPE_AMELIORATION_DEBLOQUE_TANK: 100,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: 100,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: 120,
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: 150,
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: 300,
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: 400
     },
     PARAM_AMELIORATION_LISTE__TYPE_PARAM_VALUE: {
         TYPE_AMELIORATION_PORTEURS_COMPTENU: [(TYPE_PERSONNE_PORTEUR,
-                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 4),
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 3),
                                               (TYPE_PERSONNE_COLTINEUR,
-                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 4),
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 3),
                                               (TYPE_PERSONNE_CHARGEUR,
-                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 18)]
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 16),
+                                              (TYPE_BATIMENT_LABO, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                               TYPE_AMELIORATION_CHARGEURS_COMPTENU)],
+        TYPE_AMELIORATION_COTINEURS_VITESSE: [(TYPE_PERSONNE_COLTINEUR,
+                                               PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT, 5)],
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: [(TYPE_BATIMENT_GUILDE, PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES,
+                                               TYPE_PERSONNE_PORTEUR),
+                                              (TYPE_BATIMENT_LABO, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                              TYPE_AMELIORATION_PORTEURS_VIES)],
+        TYPE_AMELIORATION_PORTEURS_VIES: [(TYPE_PERSONNE_PORTEUR, PARAM_A_VIES, 700),
+                                          (TYPE_BATIMENT_LABO, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                           TYPE_AMELIORATION_PORTEURS_VIES_2)],
+        TYPE_AMELIORATION_PORTEURS_VIES_2: [(TYPE_PERSONNE_PORTEUR, PARAM_A_VIES, 1100),
+                                            (TYPE_PERSONNE_PORTEUR, PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM, 0.7),
+                                            (TYPE_PERSONNE_PORTEUR, PARAM_F_ELEMENT_MOBILE_RAYON, 33),
+                                            (TYPE_PERSONNE_PORTEUR, PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE, 8)],
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: [(TYPE_PERSONNE_CHARGEUR,
+                                                PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 24)],
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: [(TYPE_BATIMENT_GUILDE, PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES,
+                                                TYPE_PERSONNE_CHARGEUR),
+                                               (TYPE_BATIMENT_GUILDE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                TYPE_AMELIORATION_CHARGEURS_VITESSE)],
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: [(TYPE_PERSONNE_CHARGEUR,
+                                               PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT, 2.3)],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: [(TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 23),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 14),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 275),
+                                                (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                 TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2)],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: [(TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 28),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 18),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 325),
+                                                (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                 TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3)],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: [(TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 35),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 22),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 400),
+                                                (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                 TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4)],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: [(TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 45),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 28),
+                                                (TYPE_PERSONNE_SOLDAT, PARAM_A_TIREUR_FORCE_TIR, 500)],
+        TYPE_AMELIORATION_SOLDATS_VIES_1: [(TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 440),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 550),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 860),
+                                           (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                            TYPE_AMELIORATION_SOLDATS_VIES_2)],
+        TYPE_AMELIORATION_SOLDATS_VIES_2: [(TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 490),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 610),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 830),
+                                           (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                            TYPE_AMELIORATION_SOLDATS_VIES_3)],
+        TYPE_AMELIORATION_SOLDATS_VIES_3: [(TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 550),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 680),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 910),
+                                           (TYPE_BATIMENT_CENTRE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                            TYPE_AMELIORATION_SOLDATS_VIES_4)],
+        TYPE_AMELIORATION_SOLDATS_VIES_4: [(TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 625),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 765),
+                                           (TYPE_PERSONNE_SOLDAT, PARAM_A_VIES, 1000)],
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: [(TYPE_PERSONNE_SOLDAT, PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT, 4.9),
+                                              (TYPE_BATIMENT_CASERNE, PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                               TYPE_AMELIORATION_SOLDATS_VITESSE_2),
+                                              ],
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: [(TYPE_PERSONNE_SOLDAT, PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT, 5.6)],
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: [(TYPE_BATIMENT_CASERNE,
+                                                  PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES,
+                                                  TYPE_PERSONNE_TIRAILLEUR),
+                                                 (TYPE_BATIMENT_CASERNE,
+                                                  PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                  TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1)],
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: [(TYPE_PERSONNE_TIRAILLEUR, PARAM_A_TIREUR_DELAY_TIR, 10),
+                                                    (TYPE_BATIMENT_CASERNE,
+                                                     PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                     TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2)],
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: [(TYPE_PERSONNE_TIRAILLEUR, PARAM_A_TIREUR_DELAY_TIR, 5)],
+        TYPE_AMELIORATION_DEBLOQUE_TANK: [(TYPE_BATIMENT_CASERNE,
+                                           PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES,
+                                           TYPE_PERSONNE_TANK),
+                                          (TYPE_BATIMENT_CASERNE,
+                                           PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                           TYPE_AMELIORATION_TANKS_PORTEE_TIR_1),
+                                          (TYPE_BATIMENT_CASERNE,
+                                           PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                           TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE)],
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: [(TYPE_PERSONNE_TANK, PARAM_A_TIREUR_PORTEE_TIR, 300),
+                                               (PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES,
+                                                TYPE_AMELIORATION_TANKS_PORTEE_TIR_2)],
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: [(TYPE_PERSONNE_TANK, PARAM_A_TIREUR_PORTEE_TIR, 370)],
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: [(TYPE_PERSONNE_TANK, PARAM_A_TIREUR_DELAY_TIR, 90),
+                                                       (TYPE_PERSONNE_TANK, PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT,
+                                                        1.9)],
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: [(TYPE_BATIMENT_GUILDE,
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 300),
+                                              (TYPE_BATIMENT_LABO,
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 300),
+                                              (TYPE_BATIMENT_CASERNE,
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 600),
+                                              (TYPE_BATIMENT_CENTRE,
+                                               PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, 450)],
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: [(TYPE_BATIMENT_ENTREPOT, PARAM_A_BATIMENT_NB_PLACES, 14),
+                                                       (TYPE_BATIMENT_BASE, PARAM_A_BATIMENT_NB_PLACES, 10)]
     },
     PARAM_AMELIORATION_LISTE_TPV_AFFICHAGE: {
-        TYPE_AMELIORATION_PORTEURS_COMPTENU: [True, True, True]
+        TYPE_AMELIORATION_PORTEURS_COMPTENU: [True, True, True, True],
+        TYPE_AMELIORATION_COTINEURS_VITESSE: [True],
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: [True, True],
+        TYPE_AMELIORATION_PORTEURS_VIES: [True, False],
+        TYPE_AMELIORATION_PORTEURS_VIES_2: [True, False, False, False],
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: [True],
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: [True, True],
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: [True],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: [True, True, True],
+        TYPE_AMELIORATION_SOLDATS_VIES_1: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_VIES_2: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_VIES_3: [True, True, True, True],
+        TYPE_AMELIORATION_SOLDATS_VIES_4: [True, True, True],
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: [True, True],
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: [True],
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: [True, True],
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: [True, True],
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: [True],
+        TYPE_AMELIORATION_DEBLOQUE_TANK: [True, True, True],
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: [True, True],
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: [True],
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: [True, True],
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: [True, True, True, True],
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: [True, True]
     },
     PARAM_AMELIORATION_DUREE: {
-        TYPE_AMELIORATION_PORTEURS_COMPTENU: 2000
+        TYPE_AMELIORATION_PORTEURS_COMPTENU: 4000,
+        TYPE_AMELIORATION_COTINEURS_VITESSE: 2000,
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: 3000,
+        TYPE_AMELIORATION_PORTEURS_VIES: 4500,
+        TYPE_AMELIORATION_PORTEURS_VIES_2: 4500,
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: 4000,
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: 3000,
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: 5200,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: 4500,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: 4700,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: 4900,
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: 5100,
+        TYPE_AMELIORATION_SOLDATS_VIES_1: 4500,
+        TYPE_AMELIORATION_SOLDATS_VIES_2: 4700,
+        TYPE_AMELIORATION_SOLDATS_VIES_3: 4900,
+        TYPE_AMELIORATION_SOLDATS_VIES_4: 5100,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: 4000,
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: 4300,
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: 3200,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: 4000,
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: 4300,
+        TYPE_AMELIORATION_DEBLOQUE_TANK: 3400,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: 4000,
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: 4300,
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: 4500,
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: 4300,
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: 4500
     },
     PARAM_AMELIORATION_NOM: {
-        TYPE_AMELIORATION_PORTEURS_COMPTENU: "Comptenu porteurs"
+        TYPE_AMELIORATION_PORTEURS_COMPTENU: "Comptenu porteurs",
+        TYPE_AMELIORATION_COTINEURS_VITESSE: "Vitesse Coltineur",
+        TYPE_AMELIORATION_DEBLOQUE_PORTEURS: "Débloque Porteur",
+        TYPE_AMELIORATION_PORTEURS_VIES: "Vies Porteur 1",
+        TYPE_AMELIORATION_PORTEURS_VIES_2: "Vies Porteur 2",
+        TYPE_AMELIORATION_CHARGEURS_COMPTENU: "Comptenu Chargeur",
+        TYPE_AMELIORATION_DEBLOQUE_CHARGEURS: "Débloque Chargeur",
+        TYPE_AMELIORATION_CHARGEURS_VITESSE: "Vitesse Chargeur",
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_1: "Force tir soldats 1",
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_2: "Force tir soldats 2",
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_3: "Force tir soldats 3",
+        TYPE_AMELIORATION_SOLDATS_FORCE_TIR_4: "Force tir soldats 4",
+        TYPE_AMELIORATION_SOLDATS_VIES_1: "Vies soldats 1",
+        TYPE_AMELIORATION_SOLDATS_VIES_2: "Vies soldats 2",
+        TYPE_AMELIORATION_SOLDATS_VIES_3: "Vies soldats 3",
+        TYPE_AMELIORATION_SOLDATS_VIES_4: "Vies soldats 4",
+        TYPE_AMELIORATION_SOLDATS_VITESSE_1: "Vitesse Soldat 1",
+        TYPE_AMELIORATION_SOLDATS_VITESSE_2: "Vitesse Soldat 2",
+        TYPE_AMELIORATION_DEBLOQUE_TIRAILLEURS: "Débloque Tirailleur",
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_1: "Cadence tir Tirailleur 1",
+        TYPE_AMELIORATION_TIRAILLEURS_DELAY_TIR_2: "Cadence tir Tirailleur 2",
+        TYPE_AMELIORATION_DEBLOQUE_TANK: "Débloque Tank",
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_1: "Portée tir Tank 1",
+        TYPE_AMELIORATION_TANKS_PORTEE_TIR_2: "Portée tir Tank 2",
+        TYPE_AMELIORATION_TANKS_DELAY_TIR_ET_VITESSE: "Vitesse et cadence Tank",
+        TYPE_AMELIORATION_BATIMENT_COMPTENU: "Comptenu batiments",
+        TYPE_AMELIORATION_ENTREPOS_ET_BASE_NB_PLACES: "Plus de places"
     }
 }
 
@@ -748,6 +1033,7 @@ TEXTE_PANNEAU_SELECTION_WALL_WAR = ["WALL", "WAR"]
 COULEUR_FOND_BULLE_PANNEAU_SELECTION = (210, 210, 210)
 TAILLE_TEXTE_PANNEAU_SELECTION = 15
 COULEUR_COMPTENU_PANNEAU_SELECTION = NOIR
+COULEUR_COMPTENU_GRISEE_PANNEAU_SELECTION = (100, 100, 100)
 COULEUR_SECONDAIRE_COMPTENU_PANNEAU_SELECTION = GRIS_FONCE
 PANNEAU_SELECTION_COTE_CASE_BATIMENT = 24
 
@@ -763,16 +1049,19 @@ COULEUR_BARRES_VIE_PANNEAU_SELECTION = VERT, 150
 CHEMIN_IMAGE_VIES_PANNEAU_SELECTION = 'Images/coeur.png'
 
 DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT = {
-    PARAM_A_VIES: "Nombre de vies max : ",
-    PARAM_A_PERSONNE_NB_PLACES: "Nombre de place(s) : ",
-    PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT: "Vitesse de déplacement : ",
-    PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX: 'Capacité de stockage : ',
-    PARAM_A_PORTEUR_PEUT_RECOLTER: {True: "Peut récolter",
-                                    False: "Ne peut pas récolter"},
-    PARAM_A_TIREUR_FORCE_TIR: "Force de tir : ",
-    PARAM_A_TIREUR_DELAY_TIR: "Delais entre chaque tir : ",
-    PARAM_A_TIREUR_PORTEE_TIR: "Portée de tir : ",
-    PARAM_A_BATIMENT_NB_PLACES: "Nombre de places : ",
+    PARAM_A_VIES: lambda nb_vies: f"Nombre de vies max : {nb_vies}",
+    PARAM_A_PERSONNE_NB_PLACES: lambda nb_place: f"Nombre de place(s) : {nb_place}",
+    PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT: lambda vitesse: f"Vitesse de déplacement : {vitesse}",
+    PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX: lambda comptenu: f"Capacité de stockage : {comptenu}",
+    PARAM_A_PORTEUR_PEUT_RECOLTER: lambda peut_recolter: ("Peut récolter" if peut_recolter else "Ne peut pas récolter"),
+    PARAM_A_TIREUR_FORCE_TIR: lambda force_tir: f"Force de tir : {force_tir}",
+    PARAM_A_TIREUR_DELAY_TIR: lambda delay_tir: f"Delais entre chaque tir : {delay_tir}",
+    PARAM_A_TIREUR_PORTEE_TIR: lambda portee_tir: f"Portée de tir : {portee_tir}",
+    PARAM_A_BATIMENT_NB_PLACES: lambda nb_place: f"Nombre de places : {nb_place}",
+    PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES:
+        lambda type_personne: f"Débloque construction : {DIC_ELEMENTS[PARAM_F_NOM][type_personne]}",
+    PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES:
+        lambda type_amelioration: f"Débloque : {DIC_AMELIORATIONS[PARAM_AMELIORATION_NOM][type_amelioration]}"
 }
 
 # 1. Les batiments

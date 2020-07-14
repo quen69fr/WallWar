@@ -5,7 +5,7 @@ from element import *
 
 class ElementMobile(Element):
     def __init__(self, type_element_mobil, carte: Carte, x_sur_carte: int, y_sur_carte: int,
-                 choix_mouvement: bool, objectif: (int, int) = None, orientation=0):
+                 choix_mouvement: bool, objectif: (int, int) = None, orientation=0, alea=0):
         Element.__init__(self, type_element_mobil)
         self.carte = carte
 
@@ -26,7 +26,7 @@ class ElementMobile(Element):
         self.chemin_liste_objectifs = []
         self.objectif: (int, int) = None
         if objectif:
-            self.new_objectif(objectif[0], objectif[1])
+            self.new_objectif(objectif[0], objectif[1], alea=alea)
         self.choix_mouvement = choix_mouvement
 
         self.new_affichage = True
@@ -51,10 +51,11 @@ class ElementMobile(Element):
                 self.objectif = None
                 self.chemin_liste_objectifs = []
             else:
-                self.new_objectif(x, y, modification_chemin_seulement=True)
+                self.new_objectif(x, y, modification_chemin_seulement=True, alea=ALEA_MAX_PERSONNES_UPDATE_CHEMIN)
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
-                     j_objectif: int = None, modification_chemin_seulement=False):
+                     j_objectif: int = None, modification_chemin_seulement=False, alea=0):
+        x_carte, y_carte = self.carte.ajoute_aleas_xy_carte(x_carte, y_carte, alea)
         if i_pos is None or j_pos is None:
             i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
         if i_objectif is None or j_objectif is None:
@@ -71,15 +72,20 @@ class ElementMobile(Element):
             if len(self.chemin_liste_objectifs) > 0:
                 self.objectif_suivant()
 
-    def new_objectif_point_relay(self):
-        self.new_objectif_liste_cases(self.carte.get_all_ij_cases_relay())
+    def new_objectif_point_relay(self, alea=0):
+        self.new_objectif_liste_cases(self.carte.get_all_ij_cases_relay(), alea=alea)
 
-    def new_objectif_liste_cases(self, liste_cases_objectifs: list):
+    def new_objectif_liste_cases(self, liste_cases_objectifs: list, alea=0):
         if len(liste_cases_objectifs) > 0:
             i_pos, j_pos = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
 
             self.chemin_liste_objectifs = self.calcul_new_chemin_grille_liste_objectifs(i_pos, j_pos,
                                                                                         liste_cases_objectifs)
+            if not alea == 0:
+                x_obj, y_obj = self.chemin_liste_objectifs[0]
+                x_obj, y_obj = self.carte.ajoute_aleas_xy_carte(x_obj, y_obj, alea)
+                i_obj, j_obj = self.carte.xy_carte_to_ij_case(x_obj, y_obj)
+                self.chemin_liste_objectifs[0] = self.ajuste_xy_objectif(x_obj, y_obj, i_obj, j_obj)
 
             if len(self.chemin_liste_objectifs) > 0:
                 self.objectif_suivant()
@@ -207,6 +213,13 @@ class ElementMobile(Element):
             self.deplace()
             if self.test_ojectif_atteind():
                 self.objectif_suivant()
+        self.check_update_scale_ecran_original_zoom()
+
+    def check_update_scale_ecran_original_zoom(self):
+        scale = Element.dic_elements[PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM][self.type]
+        if not self._scale_ecran_original_zoom == scale:
+            self._scale_ecran_original_zoom = scale
+            self.new_affichage = True
 
     def clic(self, x_carte_clic: int, y_carte_clic: int):
         if abs(x_carte_clic - self.x_sur_carte) <= self.rayon and \
@@ -251,11 +264,7 @@ class ElementMobile(Element):
 
     @property
     def scale_ecran_original_zoom(self):
-        scale = Element.dic_elements[PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM][self.type]
-        if not self._scale_ecran_original_zoom == scale:
-            self._scale_ecran_original_zoom = scale
-            self.new_affichage = True
-        return self._scale_ecran_original_zoom
+        return Element.dic_elements[PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM][self.type]
 
     @property
     def vitesse_deplacement(self):

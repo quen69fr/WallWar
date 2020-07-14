@@ -6,14 +6,11 @@ from tireur import *
 
 class Soldat(Personne):
     def __init__(self, type_personne, carte: Carte, x_sur_carte: int, y_sur_carte: int, objectif: (int, int) = None,
-                 orientation=0):
+                 orientation=0, alea=0):
         self.cible: ElementMobile or Batiment or None = None
         self.tireur = Tireur(type_personne)
         self.immobile = False
-        Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation)
-
-    def affiche_tireur(self, screen: pygame.Surface):
-        self.tireur.affiche(screen, self.carte, self.x_sur_carte, self.y_sur_carte)
+        Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
 
     def new_cible(self, cible: Element, cible_auto_portee_tir=False):
         self.cible = cible
@@ -21,11 +18,11 @@ class Soldat(Personne):
             self.new_objectif_cible()
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
-                     j_objectif: int = None, modification_chemin_seulement=False):
+                     j_objectif: int = None, modification_chemin_seulement=False, alea=0):
         self.cible = None
         self.immobile = False
         Personne.new_objectif(self, x_carte, y_carte, i_pos, j_pos, i_objectif, j_objectif,
-                              modification_chemin_seulement)
+                              modification_chemin_seulement, alea=alea)
 
     def get_cases_porter_tir_autour_cible(self):
         liste_cases = []
@@ -89,7 +86,7 @@ class Soldat(Personne):
                     x_batiment, y_batiment = self.carte.ij_case_to_centre_xy_carte(self.cible.i, self.cible.j)
                     ancienne_orientation = self._orientation
                     self.oriente_vers_point(x_batiment, y_batiment)
-                    if abs(ancienne_orientation - self._orientation) < 0.1:
+                    if abs(ancienne_orientation - self._orientation) < 0.001:
                         self.new_affichage = False
                 self.objectif = None
                 self.chemin_liste_objectifs = []
@@ -122,3 +119,20 @@ class Soldat(Personne):
                             self.new_objectif_cible()
                 elif isinstance(self.cible, Batiment):
                     self.new_objectif_cible()
+
+    def affiche_tireur(self, screen: pygame.Surface):
+        self.tireur.affiche(screen, self.carte, self.x_sur_carte, self.y_sur_carte)
+
+    def affiche_objectif(self, screen: pygame.Surface):
+        if self.cible is not None:
+            x_cible, y_cible = 0, 0
+            if isinstance(self.cible, Batiment):
+                x_cible, y_cible = self.carte.ij_case_to_centre_xy_relatif(self.cible.i, self.cible.j)
+            elif isinstance(self.cible, ElementMobile):
+                x_cible, y_cible = self.carte.xy_carte_to_xy_relatif(self.cible.x_sur_carte, self.cible.y_sur_carte)
+
+            x_pos, y_pos = self.carte.xy_carte_to_xy_relatif(self.x_sur_carte, self.y_sur_carte)
+            pygame.gfxdraw.line(screen, x_pos, y_pos, x_cible, y_cible, COULEUR_ELEMENT_SELECTION)
+            pygame.draw.circle(screen, COULEUR_ELEMENT_SELECTION, (x_cible, y_cible), 2)
+        else:
+            Personne.affiche_objectif(self, screen)

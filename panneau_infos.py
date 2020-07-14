@@ -45,7 +45,7 @@ class PanneauInfos(Panneau):
         new_vals = (Batiment.argent_comptenu_relay_general,
                     Batiment.liquide_comptenu_general,
                     self.monde.nb_places_personnes,
-                    Batiment.nb_personne_max)
+                    self.monde.nb_places_personnes_max)
         if not new_vals == self.val_argent_liquide_personnes_actuelles:
             self.new_affichage = True
             self.val_argent_liquide_personnes_actuelles = new_vals

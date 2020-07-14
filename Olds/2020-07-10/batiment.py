@@ -241,7 +241,7 @@ class Batiment(Element):
                     self.argent_comptenu = self.argent_comptenu_max
                 Batiment.liquide_comptenu_general += \
                     int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration])
-                self._amelioreur.annule_construction()
+                self._amelioreur.annule_amelioration()
                 return True
         return False
 

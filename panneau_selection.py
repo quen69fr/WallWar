@@ -184,12 +184,12 @@ class BoutonTexte(ZoneClicable):
                       couleur=self.couleur_texte, x_0gauche_1centre_2droite=1, y_0haut_1centre_2bas=1)
 
 
-def ecran_amelioration(largeur, hauteur, type_amelioration_presentee):
+def ecran_amelioration(largeur, hauteur, type_amelioration_presentee, grisee=False):
     ecran = pygame.Surface((largeur, hauteur))
     ecran.fill(COULEUR_FOND_PANNEAUX)
     contours = CONTOURS_BULLE_PANNEAU_SELECTION
+    couleur = GRIS_CLAIR if grisee else COULEUR_COMPTENU_PANNEAU_SELECTION
     if contours > 0:
-        couleur = COULEUR_COMPTENU_PANNEAU_SELECTION
         draw_filled_rect(ecran, (0, 0, largeur, contours), couleur)
         draw_filled_rect(ecran, (0, 0, contours, hauteur), couleur)
         draw_filled_rect(ecran, (0, hauteur - contours, largeur, hauteur), couleur)
@@ -197,25 +197,25 @@ def ecran_amelioration(largeur, hauteur, type_amelioration_presentee):
     affiche_texte(Amelioreur.dic_ameliorations[PARAM_AMELIORATION_NOM][type_amelioration_presentee],
                   int(largeur * COEF_PROPORTION_TITRE_ARGENT_PANNEAU_AMELIORATION / 2 + MARGE_PANNEAU_SELECTION),
                   int(MARGE_PANNEAU_SELECTION / 2) - 1, ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.95),
-                  couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1)
+                  couleur=couleur, x_0gauche_1centre_2droite=1)
 
     prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration_presentee]
     prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration_presentee]
 
-    marge = MARGE_PANNEAU_SELECTION / 2
+    marge = int(MARGE_PANNEAU_SELECTION / 2)
     rayon = RAYON_RESSOURCE_PANNEAU_VIGNETTES
     x_min = int(COEF_PROPORTION_TITRE_ARGENT_PANNEAU_AMELIORATION * largeur)
     y_centre = int((MARGE_PANNEAU_SELECTION + TAILLE_TEXTE_PANNEAU_SELECTION) / 2)
     x_centre = int(x_min + (largeur - x_min) / 2)
     draw_filled_circle(ecran, (x_min + rayon + marge, y_centre), rayon,
-                       DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_ARGENT])
+                       couleur=(couleur if grisee else DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_ARGENT]))
     affiche_texte(str(prix_argent), x_min + 2 * rayon + marge + 2, y_centre + 2,
-                  ecran, taille=int(rayon * 2 + 2), couleur=COULEUR_COMPTENU_PANNEAU_CONSTRUCTION,
+                  ecran, taille=int(rayon * 2 + 2), couleur=couleur,
                   y_0haut_1centre_2bas=1)
     draw_filled_circle(ecran, (x_centre + rayon + marge, y_centre), rayon,
-                       DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_LIQUIDE])
+                       couleur=(couleur if grisee else DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][TYPE_RESSOURCE_LIQUIDE]))
     affiche_texte(str(prix_liquide), x_centre + 2 * rayon + marge + 2, y_centre + 2, ecran,
-                  taille=int(rayon * 2 + 2), couleur=COULEUR_COMPTENU_PANNEAU_CONSTRUCTION, y_0haut_1centre_2bas=1)
+                  taille=int(rayon * 2 + 2), couleur=couleur, y_0haut_1centre_2bas=1)
 
     liste_textes_ameliorations = []
     for i, affichage in enumerate(
@@ -224,21 +224,27 @@ def ecran_amelioration(largeur, hauteur, type_amelioration_presentee):
             type_e, param_a, new_value = \
                 Amelioreur.dic_ameliorations[PARAM_AMELIORATION_LISTE__TYPE_PARAM_VALUE][type_amelioration_presentee][i]
             nom_element = Element.dic_elements[PARAM_F_NOM][type_e]
-            param_a_texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param_a]
+
             ancienne_valeur = Element.dic_elements[param_a][type_e]
             if type(ancienne_valeur) == int and type(new_value) == int:
-                texte_valeur = f'{ancienne_valeur} + {new_value - ancienne_valeur}'
+                if new_value >= ancienne_valeur:
+                    valeur = f'{ancienne_valeur} + {new_value - ancienne_valeur}'
+                else:
+                    valeur = f'{ancienne_valeur} - {ancienne_valeur - new_value}'
             else:
-                texte_valeur = str(new_value)
-            liste_textes_ameliorations.append(f'{nom_element}, {param_a_texte.lower()} {texte_valeur}')
+                valeur = new_value
+            texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param_a](valeur)
+            texte = texte[0].lower() + texte[1:]
+            liste_textes_ameliorations.append(f'{nom_element}, {texte}')
     hauteur_titre = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.5)
     y = hauteur_titre + (hauteur - hauteur_titre) / 2
     dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.2)
+    if len(liste_textes_ameliorations) > 3:
+        dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.94)
     y = int(y - dy * (len(liste_textes_ameliorations) - 1) / 2)
     for texte in liste_textes_ameliorations:
         affiche_texte(texte, marge, y, ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.8),
-                      couleur=COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION,
-                      y_0haut_1centre_2bas=1)
+                      couleur=couleur, y_0haut_1centre_2bas=1)
         y += dy
 
     return ecran
@@ -408,7 +414,12 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                 self.new_affichage = True
         elif self.ecran_base == self.mon_ecran_construction:
             if self.construction_actif:
-                if self.batiment.constructeur.new_affichage:
+                if self.batiment.constructeur.new_type_element_en_construction:
+                    self.init_mon_ecran_construction()
+                    self.batiment.constructeur.new_type_element_en_construction = False
+                    self.new_affichage = True
+                    self.batiment.constructeur.new_affichage = False
+                elif self.batiment.constructeur.new_affichage:
                     self.new_affichage = True
                     self.batiment.constructeur.new_affichage = False
         else:
@@ -453,13 +464,9 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
         y = int(y - dy * (len(LISTE_PARAM_PANNEAU_INFOS_BATIMENT) - 1) / 2)
         for param in LISTE_PARAM_PANNEAU_INFOS_BATIMENT:
             val = self.batiment.get_value_param(param)
-            texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param]
-            if isinstance(texte, dict):
-                texte = texte[val]
-            else:
-                if val is None:
-                    val = '/'
-                texte = texte + str(val)
+            if val is None:
+                val = '/'
+            texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param](val)
             affiche_texte(texte, int(self.largeur_ecran / 2), y,
                           self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.9),
                           couleur=COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
@@ -480,7 +487,9 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
         self.ecran_amelioration_presentee = pygame.Surface((self.largeur_ecran, self.hauteur_ecran))
         self.ecran_amelioration_presentee.blit(self.mon_ecran_amelioration, (0, 0))
         x, y, largeur, hauteur = self.rect_presentation_amelioration
-        presentation = ecran_amelioration(largeur, hauteur, self.type_amelioration_presentee)
+        grisee = (self.type_amelioration_presentee in Amelioreur.liste_types_ameliorations_en_cours and
+                  not self.batiment.amelioreur.type_amelioration_en_cours == self.type_amelioration_presentee)
+        presentation = ecran_amelioration(largeur, hauteur, self.type_amelioration_presentee, grisee)
         self.ecran_amelioration_presentee.blit(presentation, (x, y))
 
     def update_affichage_amelioreur_barre_avancement(self):
@@ -686,8 +695,7 @@ def init_panneau_construction_amelioration(rect_bulle: (int, int, int, int), pos
         (x_presentation_amelioration, y_presentation_amelioration,
          LARGEUR_PANNEAU_INFOS_AMELIORATION, hauteur_presentation_amelioration)
     PanneauConstructionAmeliorationBatiment.bouton_amelioration = \
-        BoutonTexte(largeur - hauteur_barre - MARGE_PANNEAU_SELECTION, y_barre,
-                    hauteur_barre, hauteur_barre,
+        BoutonTexte(largeur - hauteur_barre - MARGE_PANNEAU_SELECTION, y_barre, hauteur_barre, hauteur_barre,
                     COULEUR_BOUTONS_PANNEAU_SELECTION, TEXTE_BOUTON_AMELIORATION,
                     TAILLE_TEXTE_PANNEAU_SELECTION, COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION)
     PanneauConstructionAmeliorationBatiment.bouton_amelioration_stop = \
@@ -787,13 +795,9 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
         y = int(y - dy * (len(liste_param) - 1) / 2)
         for param in liste_param:
             val = self.element_selectionne.get_value_param(param)
-            texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param]
-            if isinstance(texte, dict):
-                texte = texte[val]
-            else:
-                if val is None:
-                    val = '/'
-                texte = texte + str(val)
+            if val is None:
+                val = '/'
+            texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param](val)
             affiche_texte(texte, int(self.largeur_ecran / 2), y,
                           self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.9),
                           couleur=COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
@@ -882,7 +886,10 @@ class PanneauSelection(PanneauClic):
                                      self.element_selectionne.fixe, liquide,
                                      self.element_selectionne.liste_cases_interdites_constuction)
                 else:
-                    etat_batiment = (self.element_selectionne.argent_comptenu, self.element_selectionne.nb_vies)
+                    etat_batiment = (self.element_selectionne.nb_vies_max,
+                                     self.element_selectionne.argent_comptenu_max,
+                                     self.element_selectionne.argent_comptenu,
+                                     self.element_selectionne.nb_vies)
 
                 if not self.etat_element_selectionne == etat_batiment:
                     self.new_affichage = True
@@ -892,6 +899,8 @@ class PanneauSelection(PanneauClic):
                 etat_porteur = (self.element_selectionne.ressource_comptenu,
                                 self.element_selectionne.type_ressource_comptenu,
                                 self.element_selectionne.objectif is None,
+                                self.element_selectionne.nb_vies_max,
+                                self.element_selectionne.ressource_comptenu_max,
                                 self.element_selectionne.nb_vies,
                                 self.element_selectionne.dic_nb_ressources_transportees_en_tout)
                 if not self.etat_element_selectionne == etat_porteur:
@@ -900,6 +909,7 @@ class PanneauSelection(PanneauClic):
 
             elif isinstance(self.element_selectionne, Soldat):
                 etat_soldat = (self.element_selectionne.nb_vies,
+                               self.element_selectionne.nb_vies_max,
                                self.element_selectionne.objectif is None and self.element_selectionne.cible is None,
                                self.element_selectionne.cible,
                                self.element_selectionne.tireur.nb_destructions)

@@ -5,12 +5,12 @@ from personne import *
 
 class Porteur(Personne):
     def __init__(self, type_personne, carte: Carte, x_sur_carte: int, y_sur_carte: int, objectif: (int, int) = None,
-                 orientation=0):
+                 orientation=0, alea=0):
         self.ressource_comptenu = 0
         self.type_ressource_comptenu = None
         self.objectif_global = None
         self.liste_transaction_a_effectuer = []
-        Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation)
+        Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
         self.reel_ecran_original = self.ecran_original.copy()
         self.new_ecran_original = True
         self.dic_nb_ressources_transportees_en_tout = {TYPE_RESSOURCE_ARGENT: 0,
@@ -22,7 +22,7 @@ class Porteur(Personne):
         self.objectif_global = None
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
-                     j_objectif: int = None, modification_chemin_seulement=False):
+                     j_objectif: int = None, modification_chemin_seulement=False, alea=0):
         if not modification_chemin_seulement:
             self.objectif_global = None
             i_objectif, j_objectif = self.carte.xy_carte_to_ij_case(x_carte, y_carte)
@@ -31,7 +31,7 @@ class Porteur(Personne):
                 self.objectif_global = self.carte.ij_case_to_centre_xy_carte(i_objectif, j_objectif)
             elif case == TYPE_CASE_SOURCE and self.peut_recolter:
                 self.objectif_global = self.carte.ij_case_to_centre_xy_carte(i_objectif, j_objectif)
-        ElementMobile.new_objectif(self, x_carte, y_carte, i_pos, j_pos, i_objectif, j_objectif)
+        ElementMobile.new_objectif(self, x_carte, y_carte, i_pos, j_pos, i_objectif, j_objectif, alea=alea)
 
     def objectif_suivant(self):
         ElementMobile.objectif_suivant(self)
@@ -58,9 +58,10 @@ class Porteur(Personne):
                                     if case == TYPE_CASE_SOURCE:
                                         self.objectif_global = self.carte.ij_case_to_centre_xy_carte(i, j)
                                         break
-                        self.new_objectif(self.objectif_global[0], self.objectif_global[1], i_pos, j_pos, i_obj, j_obj)
+                        self.new_objectif(self.objectif_global[0], self.objectif_global[1], i_pos, j_pos, i_obj, j_obj,
+                                          alea=ALEA_MAX_PORTEURS_DEPLACEMENT_AUTO)
                     else:
-                        self.new_objectif_point_relay()
+                        self.new_objectif_point_relay(alea=ALEA_MAX_PORTEURS_DEPLACEMENT_AUTO)
 
     def transaction_possible(self):
         if self.objectif is None:

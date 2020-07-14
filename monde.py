@@ -39,8 +39,8 @@ class Monde:
         for pos_source, type_source, nb_ressources in LISTE_SOURCES_INIT:
             self.add_source(Source(type_source, pos_source, nb_ressources))
 
-        for type_personne, x_carte, y_carte in LISTE_PERSONNE_INIT:
-            self.cree_personne(type_personne, x_carte, y_carte)
+        for type_pers, x_carte, y_carte in LISTE_PERSONNE_INIT:
+            self.cree_personne(type_pers, x_carte, y_carte)
 
     def get_element_fixe(self, i, j):
         for source in self.liste_sources:
@@ -54,15 +54,15 @@ class Monde:
     # -------------------------------------------------
     #                     Personnes
     # -------------------------------------------------
-    def cree_personne(self, type_personne, x_carte, y_carte, objectif=None):
-        if Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_PERSONNE:
-            self.add_personne(Personne(type_personne, self.carte, x_carte, y_carte))
+    def cree_personne(self, type_pers, x_carte, y_carte, objectif=None, alea=0):
+        if Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_PERSONNE:
+            self.add_personne(Personne(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
-        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_PORTEUR:
-            self.add_personne(Porteur(type_personne, self.carte, x_carte, y_carte, objectif=objectif))
+        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_PORTEUR:
+            self.add_personne(Porteur(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
-        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_SOLDAT:
-            self.add_personne(Soldat(type_personne, self.carte, x_carte, y_carte, objectif=objectif))
+        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_SOLDAT:
+            self.add_personne(Soldat(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
         return False
 
@@ -132,7 +132,7 @@ class Monde:
         return [self.carte.xy_carte_to_ij_case(element_mobile.x_sur_carte, element_mobile.y_sur_carte)
                 for element_mobile in self.liste_personnes + self.liste_ennemis]
 
-    def gere_new_objectif_cible_soldat(self, soldat: Soldat, x_carte_clic: int, y_carte_clic: int):
+    def gere_new_objectif_cible_soldat(self, soldat: Soldat, x_carte_clic: int, y_carte_clic: int, alea=0):
         for ennemi in self.liste_ennemis:
             if ennemi.clic(x_carte_clic, y_carte_clic):
                 soldat.new_cible(ennemi)
@@ -146,7 +146,7 @@ class Monde:
             if not personne == soldat and personne.clic(x_carte_clic, y_carte_clic):
                 soldat.new_cible(personne)
                 return
-        soldat.new_objectif(x_carte_clic, y_carte_clic)
+        soldat.new_objectif(x_carte_clic, y_carte_clic, alea=alea)
 
     def gere_chevauchements_personnes(self):
         for i, personne1 in enumerate(self.liste_personnes):
@@ -168,6 +168,8 @@ class Monde:
                                     coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
                                     if personne == personne1:
                                         coef_relatif *= -1
+                                    old_i, old_j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte,
+                                                                                  personne.y_sur_carte)
                                     personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
                                     i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
                                     new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte,
@@ -175,8 +177,11 @@ class Monde:
                                     if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
                                         personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
                                     if personne.objectif is not None:
-                                        x, y = personne.objectif
-                                        personne.oriente_vers_point(x, y)
+                                        if not i == old_i or not j == old_j:
+                                            personne.update_chemin_et_position()
+                                        else:
+                                            x, y = personne.objectif
+                                            personne.oriente_vers_point(x, y)
 
     # -------------------------------------------------
     #                      Sources
@@ -232,7 +237,6 @@ class Monde:
             if isinstance(personne, Soldat):
                 if personne.cible == batiment:
                     personne.cible = None
-        Batiment.nb_personne_max -= batiment.nb_places
 
     def update_batiemnt_amelioration(self):
         for batiment in self.liste_batiments_constuits:
@@ -241,16 +245,26 @@ class Monde:
                 for type_element, param, value in \
                         (Amelioreur.dic_ameliorations[PARAM_AMELIORATION_LISTE__TYPE_PARAM_VALUE]
                          [type_amelioration_prete]):
-                    Element.dic_elements[param][type_element] = value
+                    if param == PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES or \
+                            param == PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES:
+                        Element.dic_elements[param][type_element] += [value]
+                    else:
+                        Element.dic_elements[param][type_element] = value
+                param_ameliorations = PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES
+                if type_amelioration_prete in Element.dic_elements[param_ameliorations][batiment.type]:
+                    Element.dic_elements[param_ameliorations][batiment.type].remove(type_amelioration_prete)
+                if type_amelioration_prete in Amelioreur.liste_types_ameliorations_en_cours:
+                    Amelioreur.liste_types_ameliorations_en_cours.remove(type_amelioration_prete)
 
     def update_batiments_constuits(self):
         for batiment in self.liste_batiments_constuits:
             type_construction_prete = batiment.update_constructeur()
-            if type_construction_prete is not None and Batiment.nb_personne_max >= self.nb_places_personnes + \
+            if type_construction_prete is not None and self.nb_places_personnes_max >= self.nb_places_personnes + \
                     Element.dic_elements[PARAM_A_PERSONNE_NB_PLACES][type_construction_prete]:
                 i, j = random.choice(batiment.liste_cases_depos + batiment.liste_cases_relais)
                 x, y = self.carte.ij_case_to_centre_xy_carte(i, j)
-                self.cree_personne(type_construction_prete, x, y, batiment.point_sortie_constructions)
+                self.cree_personne(type_construction_prete, x, y, objectif=batiment.point_sortie_constructions,
+                                   alea=ALEA_MAX_PERSONNES_SORTIE_BATIMENT)
                 batiment.constructeur.type_element_en_construction = None
                 batiment.constructeur.new_affichage = True
 
@@ -281,6 +295,13 @@ class Monde:
                                   self.element_selectionne.liste_cases_pleines)
             self.liste_batiments_en_cours_de_construction.remove(self.element_selectionne)
             self.element_selectionne = None
+
+    @property
+    def nb_places_personnes_max(self):
+        nb_places = 0
+        for batiment in self.liste_batiments_constuits:
+            nb_places += batiment.nb_places
+        return nb_places
 
     # -------------------------------------------------
     #                     Explosions
@@ -402,10 +423,12 @@ class Monde:
             for element in liste:
                 if isinstance(element, ElementMobile) and element.choix_mouvement:
                     x_carte_clic, y_carte_clic = self.carte.xy_absolu_to_xy_carte(x_souris, y_souris)
+                    alea = ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE if type(self.element_selectionne) == list \
+                        else ALEA_MAX_PERSONNES_DEPLACEMENT_SEUL
                     if isinstance(element, Soldat):
-                        self.gere_new_objectif_cible_soldat(element, x_carte_clic, y_carte_clic)
+                        self.gere_new_objectif_cible_soldat(element, x_carte_clic, y_carte_clic, alea=alea)
                     else:
-                        element.new_objectif(x_carte_clic, y_carte_clic)
+                        element.new_objectif(x_carte_clic, y_carte_clic, alea=alea)
 
             if isinstance(self.element_selectionne, Batiment) and self.element_selectionne.constructeur is not None:
                 x_carte_clic, y_carte_clic = self.carte.xy_absolu_to_xy_carte(x_souris, y_souris)

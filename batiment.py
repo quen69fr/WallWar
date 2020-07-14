@@ -10,6 +10,7 @@ class Constructeur:
         self.type_element_en_construction = None
         self.avancement_construction = 0
         self.new_affichage = True
+        self.new_type_element_en_construction = False
 
     def update(self):
         if self.type_element_en_construction is not None:
@@ -21,7 +22,6 @@ class Constructeur:
             self.type_element_en_construction = self.liste_type_elements_en_attente[0]
             del self.liste_type_elements_en_attente[0]
             self.avancement_construction = 0
-
             self.new_affichage = True
         return None
 
@@ -49,6 +49,7 @@ class Constructeur:
 
 class Amelioreur:
     dic_ameliorations = copy.deepcopy(DIC_AMELIORATIONS)
+    liste_types_ameliorations_en_cours = []
 
     def __init__(self, liste_ameliorations_possibles):
         self.liste_ameliorations_possibles = liste_ameliorations_possibles
@@ -67,14 +68,19 @@ class Amelioreur:
                 return type_ameliration
         return None
 
-    def lance_amelioration(self, type_amelioration):
-        if self.type_amelioration_en_cours is None and type_amelioration in self.liste_ameliorations_possibles:
-            self.type_amelioration_en_cours = type_amelioration
+    def lance_amelioration(self, type_amelio):
+        if self.type_amelioration_en_cours is None and type_amelio in self.liste_ameliorations_possibles and\
+                type_amelio not in Amelioreur.liste_types_ameliorations_en_cours:
+            self.type_amelioration_en_cours = type_amelio
+            Amelioreur.liste_types_ameliorations_en_cours.append(type_amelio)
             self.avancement_amelioration = 0
             return True
         return False
 
-    def annule_construction(self):
+    def annule_amelioration(self):
+        if self.type_amelioration_en_cours is not None and \
+                self.type_amelioration_en_cours in Amelioreur.liste_types_ameliorations_en_cours:
+            Amelioreur.liste_types_ameliorations_en_cours.remove(self.type_amelioration_en_cours)
         self.type_amelioration_en_cours = None
         self.avancement_amelioration = 0
         self.new_affichage = True
@@ -89,7 +95,6 @@ class Amelioreur:
 class Batiment(Element):
     argent_comptenu_relay_general = NB_ARGENT_INIT
     liquide_comptenu_general = NB_LIQUIDE_INIT
-    nb_personne_max = 0
 
     def __init__(self, type_batiment, i_centre: int, j_centre: int, carte: Carte, contruit=False):
         Element.__init__(self, type_batiment)
@@ -184,7 +189,6 @@ class Batiment(Element):
         if self.liste_cases_relais:
             Batiment.argent_comptenu_relay_general += self.argent_comptenu
             self.argent_comptenu = 0
-        Batiment.nb_personne_max += self.nb_places
         return False
 
     def update_constructeur(self):
@@ -220,11 +224,11 @@ class Batiment(Element):
                 return True
         return False
 
-    def lance_amelioration_amelioreur(self, type_amelioration):
-        prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration]
-        prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration]
+    def lance_amelioration_amelioreur(self, type_amelio):
+        prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelio]
+        prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelio]
         if self.argent_comptenu >= prix_argent and Batiment.liquide_comptenu_general >= prix_liquide:
-            if self.amelioreur.lance_amelioration(type_amelioration):
+            if self.amelioreur.lance_amelioration(type_amelio):
                 self.argent_comptenu -= prix_argent
                 Batiment.liquide_comptenu_general -= prix_liquide
                 return True
@@ -232,16 +236,16 @@ class Batiment(Element):
 
     def annule_amelioration_en_cours(self):
         if self.amelioreur is not None:
-            type_amelioration = self._amelioreur.type_amelioration_en_cours
-            if type_amelioration is not None:
+            type_amelio = self._amelioreur.type_amelioration_en_cours
+            if type_amelio is not None:
                 coef = 1 - (self._amelioreur.avancement_amelioration / self._amelioreur.avancement_ameliration_max)
                 self.argent_comptenu += \
-                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration])
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelio])
                 if self.argent_comptenu > self.argent_comptenu_max:
                     self.argent_comptenu = self.argent_comptenu_max
                 Batiment.liquide_comptenu_general += \
-                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration])
-                self._amelioreur.annule_construction()
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelio])
+                self._amelioreur.annule_amelioration()
                 return True
         return False
 
@@ -365,9 +369,11 @@ class Batiment(Element):
                 self._constructeur = None
         else:
             if self._constructeur is None:
-                self._constructeur = Constructeur(liste_constructions)
+                self._constructeur = Constructeur(liste_constructions[:])
             else:
-                self._constructeur.liste_constructions_possibles = liste_constructions
+                if not self._constructeur.liste_constructions_possibles == liste_constructions:
+                    self._constructeur.liste_constructions_possibles = liste_constructions[:]
+                    self._constructeur.new_type_element_en_construction = True
 
         return self._constructeur
 
@@ -379,8 +385,10 @@ class Batiment(Element):
                 self._amelioreur = None
         else:
             if self._amelioreur is None:
-                self._amelioreur = Amelioreur(liste_ameliorations)
+                self._amelioreur = Amelioreur(liste_ameliorations[:])
             else:
-                self._amelioreur.liste_ameliorations_possibles = liste_ameliorations
+                if not self._amelioreur.liste_ameliorations_possibles == liste_ameliorations:
+                    self._amelioreur.liste_ameliorations_possibles = liste_ameliorations[:]
+                    self._amelioreur.new_affichage = True
 
         return self._amelioreur
