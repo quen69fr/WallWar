@@ -126,20 +126,20 @@ class Porteur(Personne):
                                        self.type_ressource_comptenu == source_or_batiment.type_ressource):
                 i, j = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
                 ressource_comptenu_case = source_or_batiment.get_ressource_case(i, j)
-                n = min(self.ressource_comptenu_max - self.ressource_comptenu, ressource_comptenu_case)
-                if source_or_batiment.remove_ressource(n, i, j):
-                    self.ressource_comptenu += n
+                nb = min(self.ressource_comptenu_max - self.ressource_comptenu, ressource_comptenu_case)
+                if source_or_batiment.remove_ressource(nb, i, j):
+                    self.ressource_comptenu += nb
                     self.type_ressource_comptenu = source_or_batiment.type_ressource
-                    self.dic_nb_ressources_transportees_en_tout[self.type_ressource_comptenu] += n
+                    self.dic_nb_ressources_transportees_en_tout[self.type_ressource_comptenu] += nb
                     return True
             return False
 
         if isinstance(source_or_batiment, Batiment):
-            n = min(self.ressource_comptenu_max - self.ressource_comptenu, Batiment.argent_comptenu_relay_general)
-            if source_or_batiment.remove_argent(n):
-                self.ressource_comptenu += n
+            nb = min(self.ressource_comptenu_max - self.ressource_comptenu, Batiment.argent_comptenu_relay_general)
+            if source_or_batiment.remove_argent(nb):
+                self.ressource_comptenu += nb
                 self.type_ressource_comptenu = TYPE_RESSOURCE_ARGENT
-                self.dic_nb_ressources_transportees_en_tout[self.type_ressource_comptenu] += n
+                self.dic_nb_ressources_transportees_en_tout[self.type_ressource_comptenu] += nb
                 return True
             return False
 

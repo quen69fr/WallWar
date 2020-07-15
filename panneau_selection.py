@@ -123,10 +123,10 @@ def barre_avancement(dimention: (int, int), couleur, proportion_coloree: float, 
     return barre
 
 
-def etiquette(screen: pygame.Surface, n: int, x: int, y: int, rayon: int, couleur):
+def etiquette(screen: pygame.Surface, nb: int, x: int, y: int, rayon: int, couleur):
     draw_filled_circle(screen, (x, y), rayon + 1, couleur)
     draw_filled_circle(screen, (x, y), rayon - 1, COULEUR_FOND_PANNEAUX)
-    affiche_texte(str(n), x, y + 1, screen, taille=int(rayon * 1.5), couleur=couleur,
+    affiche_texte(str(nb), x, y + 1, screen, taille=int(rayon * 1.5), couleur=couleur,
                   x_0gauche_1centre_2droite=1, y_0haut_1centre_2bas=1)
 
 
@@ -325,11 +325,11 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
             dx = int(self.largeur_ecran / 2 + largeur_rect / 2) / 2
             x_centre = int(x_rect + largeur_rect / 2)
             y_centre = int(y_rect + hauteur_rect / 2)
-            for n in [-1, 1]:
-                x = int(x_centre - n * (dx + TAILLE_FLECHES_AMELIORATIONS / 3))
-                p1 = x + n * TAILLE_FLECHES_AMELIORATIONS, y_centre - n * TAILLE_FLECHES_AMELIORATIONS
+            for sens in [-1, 1]:
+                x = int(x_centre - sens * (dx + TAILLE_FLECHES_AMELIORATIONS / 3))
+                p1 = x + sens * TAILLE_FLECHES_AMELIORATIONS, y_centre - sens * TAILLE_FLECHES_AMELIORATIONS
                 p2 = x, y_centre
-                p3 = p1[0], y_centre + n * TAILLE_FLECHES_AMELIORATIONS
+                p3 = p1[0], y_centre + sens * TAILLE_FLECHES_AMELIORATIONS
                 pygame.draw.line(self.mon_ecran_amelioration, NOIR, p1, p2, 3)
                 pygame.draw.line(self.mon_ecran_amelioration, NOIR, p2, p3, 3)
         else:
@@ -417,7 +417,8 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
     def update(self):
         if self.ecran_base == self.mon_ecran_information:
             liste_params_infos_batiment = LISTE_PARAM_PANNEAU_INFOS_BATIMENT_PEUT_TIRER if self.batiment.peut_tirer \
-                else LISTE_PARAM_PANNEAU_INFOS_BATIMENT
+                else (LISTE_PARAM_PANNEAU_INFOS_BATIMENT if not self.batiment.liste_cases_regen_relatives
+                      else LISTE_PARAM_PANNEAU_INFOS_BATIMENT_REGEN)
             etat_batiment_infos = [self.batiment.get_value_param(param) for param in liste_params_infos_batiment]
             if self.batiment.peut_tirer:
                 etat_batiment_infos += [self.batiment.tireur.nb_destructions]
@@ -504,7 +505,8 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
 
         dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
         liste_params_infos_batiment = LISTE_PARAM_PANNEAU_INFOS_BATIMENT_PEUT_TIRER if self.batiment.peut_tirer \
-            else LISTE_PARAM_PANNEAU_INFOS_BATIMENT
+            else (LISTE_PARAM_PANNEAU_INFOS_BATIMENT if not self.batiment.liste_cases_regen_relatives
+                  else LISTE_PARAM_PANNEAU_INFOS_BATIMENT_REGEN)
         y = self.hauteur_bandeau + (self.hauteur_ecran - self.hauteur_bandeau) / 2
         y = int(y - dy * (len(liste_params_infos_batiment) - 1) / 2)
         for param in liste_params_infos_batiment:
@@ -582,8 +584,8 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                                               rapport, width=CONTOURS_BULLE_PANNEAU_SELECTION,
                                               couleur_bord=COULEUR_COMPTENU_PANNEAU_SELECTION)
 
-        n = COTE_CARRE_ILLUSTRATION - CONTOURS_BULLE_PANNEAU_SELECTION
-        pygame.draw.polygon(illustration, COULEUR_COMPTENU_PANNEAU_SELECTION, [(0, 0), (0, n), (n, n), (n, 0)],
+        nb = COTE_CARRE_ILLUSTRATION - CONTOURS_BULLE_PANNEAU_SELECTION
+        pygame.draw.polygon(illustration, COULEUR_COMPTENU_PANNEAU_SELECTION, [(0, 0), (0, nb), (nb, nb), (nb, 0)],
                             CONTOURS_BULLE_PANNEAU_SELECTION)
 
         self.ecran.blit(barre_construction, (x_barre, y_barre))
@@ -1164,8 +1166,8 @@ class PanneauSelection(PanneauClic):
                                                             TYPE_RESSOURCE_LIQUIDE]):
                             y_i = int(y_textes_ressource_en_tout_centre +
                                       (i - 0.5) * ECART_TEXTE_PANNEAU_SELECTION_RESSOURCE_EN_TOUT)
-                            n = self.element_selectionne.dic_nb_ressources_transportees_en_tout[type_ressource]
-                            affiche_texte(str(n), x_textes_ressource, y_i, self.ecran,
+                            nb = self.element_selectionne.dic_nb_ressources_transportees_en_tout[type_ressource]
+                            affiche_texte(str(nb), x_textes_ressource, y_i, self.ecran,
                                           taille=int(TAILLE_TEXTE_PANNEAU_SELECTION),
                                           couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, y_0haut_1centre_2bas=1)
                             rayon = RAYON_RESSOURCE_PANNEAU_VIGNETTES

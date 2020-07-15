@@ -67,10 +67,11 @@ class Carte:
         self.set_cases_grille(TYPE_CASE_SOURCE, liste_cases_sources)
 
     def add_batiment(self, liste_cases_pleines: list, liste_cases_relais: list, liste_cases_depos: list,
-                     batiment_construit=False):
+                     liste_cases_regens, batiment_construit=False):
         self.set_cases_grille(TYPE_CASE_PLEINE, liste_cases_pleines)
         self.set_cases_grille(TYPE_CASE_S_RELAIS if batiment_construit else TYPE_CASE_S_DEPOS, liste_cases_relais)
         self.set_cases_grille(TYPE_CASE_S_DEPOS, liste_cases_depos)
+        self.set_cases_grille(TYPE_CASE_S_REGEN, liste_cases_regens)
 
     def add_cases_relais_batiment(self, liste_cases_relais: list):
         self.set_cases_grille(TYPE_CASE_S_RELAIS, liste_cases_relais)
@@ -102,9 +103,9 @@ class Carte:
             return True
         return False
 
-    def zoom_dezoom(self, n, x_souris: int, y_souris: int):
-        new_cote_case_zoom = self._cote_case_zoom + max(int(self._cote_case_zoom * CARTE_COEF_ZOOM), 1) * n
-        if n > 0:
+    def zoom_dezoom(self, sens, x_souris: int, y_souris: int):
+        new_cote_case_zoom = self._cote_case_zoom + max(int(self._cote_case_zoom * CARTE_COEF_ZOOM), 1) * sens
+        if sens > 0:
             if new_cote_case_zoom > self._cote_case_zoom_max:
                 new_cote_case_zoom = self._cote_case_zoom_max
         else:

@@ -94,6 +94,7 @@ TYPE_CASE_PLEINE = 1
 TYPE_CASE_S_RELAIS = 2
 TYPE_CASE_SOURCE = 3
 TYPE_CASE_S_DEPOS = 4
+TYPE_CASE_S_REGEN = 5
 
 TYPE_SOURCE_MINERAI = 10
 TYPE_SOURCE_LIQUIDE = 11
@@ -164,7 +165,7 @@ ZOOM_INIT = 0.5
 NB_ARGENT_INIT = 100
 NB_LIQUIDE_INIT = 50
 LISTE_BATIMENTS_INIT = [((8, 8), TYPE_BATIMENT_BASE),
-                        ((18, 3), TYPE_BATIMENT_TOURELLE)]  # TODO : temp
+                        ((18, 3), TYPE_BATIMENT_ENTREPOT)]
 LISTE_SOURCES_INIT = [([(0, 3), (0, 4), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (2, 5),
                         (2, 2), (2, 3), (3, 3), (2, 4)], TYPE_SOURCE_MINERAI, 5873),
                       ([(50, 50), (51, 51), (50, 51), (51, 50), (52, 51),
@@ -200,7 +201,8 @@ DIC_CASES_SPECIALES = {
         TYPE_CASE_S_POSSIBLE: (VERT, 180),
         TYPE_CASE_S_IMPOSSIBLE: (ROUGE, 120),
         TYPE_CASE_S_SELECTIONNEE: (BLANC, 70),
-        TYPE_CASE_S_NON_CONSTRUITE: NOIR
+        TYPE_CASE_S_NON_CONSTRUITE: NOIR,
+        TYPE_CASE_S_REGEN: (VERT, 150)
     }
 }
 ALPHA_MIN_COULEUR_CASE_NON_CONSTRUITES = 30
@@ -283,29 +285,30 @@ PARAM_A_TIREUR_FORCE_TIR = 5
 PARAM_A_TIREUR_PORTEE_TIR = 6
 PARAM_A_TIREUR_DELAY_TIR = 7
 PARAM_A_PORTEUR_PEUT_RECOLTER = 8
+PARAM_A_BATIMENT_NB_VIES_REGEN = 9
 
-PARAM_F_NOM = 9
-PARAM_F_DESCRIPTION = 10
-PARAM_F_TYPE_EXPLOSION = 11
-PARAM_F_BATIMENT_LISTE_CASES = 12
-PARAM_F_BATIMENT_LISTE_COULEURS_CASES_PLEINES = 13
-PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION = 14
-PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION = 15
-PARAM_F_BATIMENT_PERSONNE_DUREE_CONSTRUCTION = 16
-PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES = 17
-PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES = 18
-PARAM_F_BATIMENT_PEUT_TIRER = 19
-PARAM_F_ELEMENT_MOBILE_CHEMIN_IMAGE = 20
-PARAM_F_ELEMENT_MOBILE_RAYON = 21
-PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM = 22
-PARAM_F_PERSONNE_TYPE_CLASS = 23
-PARAM_F_PORTEUR_DISTANCE_RESSOURCE = 24
-PARAM_F_PORTEUR_RAYON_RESSOURCE = 25
-PARAM_F_TIREUR_TYPE_EXPLOSION_TIR = 26
-PARAM_F_TIREUR_EXPLOSION_TIR_DISTANCE = 27
-PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE = 28
-PARAM_F_BATIMENT_TIREUR_CHEMIN_IMAGE_CANON = 29
-PARAM_F_BATIMENT_TIREUR_SCALE_IMAGE_CANON_ZOOM = 30
+PARAM_F_NOM = 10
+PARAM_F_DESCRIPTION = 11
+PARAM_F_TYPE_EXPLOSION = 12
+PARAM_F_BATIMENT_LISTE_CASES = 13
+PARAM_F_BATIMENT_LISTE_COULEURS_CASES_PLEINES = 14
+PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION = 15
+PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION = 16
+PARAM_F_BATIMENT_PERSONNE_DUREE_CONSTRUCTION = 17
+PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES = 18
+PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES = 19
+PARAM_F_BATIMENT_PEUT_TIRER = 20
+PARAM_F_ELEMENT_MOBILE_CHEMIN_IMAGE = 21
+PARAM_F_ELEMENT_MOBILE_RAYON = 22
+PARAM_F_ELEMENT_MOBILE_SCALE_IMAGE_ZOOM = 23
+PARAM_F_PERSONNE_TYPE_CLASS = 24
+PARAM_F_PORTEUR_DISTANCE_RESSOURCE = 25
+PARAM_F_PORTEUR_RAYON_RESSOURCE = 26
+PARAM_F_TIREUR_TYPE_EXPLOSION_TIR = 27
+PARAM_F_TIREUR_EXPLOSION_TIR_DISTANCE = 28
+PARAM_F_ELEMENT_MOBILE_MASSE_RELATIVE = 29
+PARAM_F_BATIMENT_TIREUR_CHEMIN_IMAGE_CANON = 30
+PARAM_F_BATIMENT_TIREUR_SCALE_IMAGE_CANON_ZOOM = 31
 
 DIC_ELEMENTS = {
     # Tous les éléments :
@@ -358,7 +361,7 @@ DIC_ELEMENTS = {
                                "d'améliorer les porteurs qui sont ",
                                "indispensables pour récolter les ",
                                "ressources et pour les transporter ",
-                               "vers tous vos batiments. Le Labo "
+                               "vers tous vos batiments. Le Labo ",
                                "vous permettra de les améliorer. "],
         TYPE_BATIMENT_LABO: ["    Le Labo vous permet d'améliorer ",
                              "certines capacités de vos porteurs. ",
@@ -378,8 +381,18 @@ DIC_ELEMENTS = {
                                "liorer considérablement vos armes ",
                                "d'attaque. Seules ces amélorations ",
                                "vous permetteront de survivre !"],
-        TYPE_BATIMENT_TOURELLE: ["    La Tourelle ... "],  # TODO
-        TYPE_BATIMENT_STATION: ["    La Station ... "],  # TODO
+        TYPE_BATIMENT_TOURELLE: ["    La Tourelle est le seul batiment ",
+                                 "qui peut tir sur les ennemis. C'est  ",
+                                 "ainsi un véritable atout pour se ",
+                                 "défendre. Mais il peut de plus se ",
+                                 "révèler être une redoutable arme ",
+                                 "d'attaque (surtout bien amélioré) !"],
+        TYPE_BATIMENT_STATION: ["    La Station est le seul batiment ",
+                                "qui permet à vos personnes de ré-",
+                                "cupérer des vies. En effet toutes ",
+                                "les personnes se trouvant à l'inté- ",
+                                "rieur récupèrent doucement leurs ",
+                                "vies predues. "],
         TYPE_PERSONNE_PORTEUR: ["    Le Porteur est le transporteur le ",
                                 "plus résistant, il vous permet de ",
                                 "récolter ou d'apporter du minerai, ",
@@ -437,47 +450,56 @@ DIC_ELEMENTS = {
         TYPE_BATIMENT_BASE: {
             TYPE_CASE_PLEINE: [(0, 0), (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)],
             TYPE_CASE_S_DEPOS: [],
-            TYPE_CASE_S_RELAIS: [(0, -2), (0, 2), (-2, 0), (2, 0)]
+            TYPE_CASE_S_RELAIS: [(0, -2), (0, 2), (-2, 0), (2, 0)],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_ENTREPOT: {
             TYPE_CASE_PLEINE: [(-1, 2), (-2, -1), (2, 1), (1, -2), (-1, 1), (-1, -1), (1, 1),
                                (1, -1), (-1, 0), (1, 0), (0, 1), (0, -1), (0, 0)],
             TYPE_CASE_S_DEPOS: [(0, 2), (0, -2), (-2, 0), (2, 0)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_GUILDE: {
             TYPE_CASE_PLEINE: [(-2, 2), (2, -2), (-2, 1), (-1, 2), (2, -1), (1, -2), (1, 2),
                                (2, 1), (1, 1), (-2, -2), (-1, -1), (-2, -1), (-1, -2)],
             TYPE_CASE_S_DEPOS: [(0, 0)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_LABO: {
             TYPE_CASE_PLEINE: [(0, 0), (0, 1), (1, 0), (1, 1)],
             TYPE_CASE_S_DEPOS: [(0, -1), (-1, 1), (2, 0)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_CASERNE: {
             TYPE_CASE_PLEINE: [(2, 2), (2, 1), (1, 2), (1, 1), (2, 0), (0, 2), (0, 1), (1, 0), (-1, 2),
                                (2, -1), (0, 0), (-1, 1), (1, -1), (-1, 0), (0, -1), (-2, 1), (1, -2),
                                (-1, -1), (-2, 0), (0, -2), (-2, -1), (-1, -2), (-2, -2)],
             TYPE_CASE_S_DEPOS: [(-2, 2), (2, -2)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_CENTRE: {
             TYPE_CASE_PLEINE: [(1, 2), (-1, 2), (1, 1), (-1, 1), (1, 0), (-1, 0), (-1, -1), (0, -1), (1, -1),
                                (-1, -2), (0, -2), (1, -2), (-2, 0), (2, 0), (-2, -1), (2, -1), (-2, -2), (2, -2)],
             TYPE_CASE_S_DEPOS: [(0, 0)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_TOURELLE: {
             TYPE_CASE_PLEINE: [(0, 0)],
             TYPE_CASE_S_DEPOS: [(-1, 0), (0, -1), (0, 1), (1, 0)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: []
         },
         TYPE_BATIMENT_STATION: {
-            TYPE_CASE_PLEINE: [],
-            TYPE_CASE_S_DEPOS: [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)],
-            TYPE_CASE_S_RELAIS: []
+            TYPE_CASE_PLEINE: [(2, 1), (2, 2), (2, -1), (2, -2), (1, 2), (1, -2),
+                               (-1, 2), (-1, -2), (-2, 1), (-2, 2), (-2, -1), (-2, -2)],
+            TYPE_CASE_S_DEPOS: [(2, 0), (-2, 0), (0, 2), (0, -2)],
+            TYPE_CASE_S_RELAIS: [],
+            TYPE_CASE_S_REGEN: [(0, 0), (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         }
     },
     PARAM_F_BATIMENT_LISTE_COULEURS_CASES_PLEINES: {
@@ -498,7 +520,7 @@ DIC_ELEMENTS = {
                                (30, 47, 0), (30, 47, 0), (30, 47, 0), (33, 52, 0), (33, 52, 0), (33, 52, 0),
                                (27, 44, 0), (27, 44, 0), (30, 43, 0), (30, 43, 0), (33, 54, 0), (33, 54, 0)],
         TYPE_BATIMENT_TOURELLE: [(20, 20, 20)],
-        TYPE_BATIMENT_STATION: []
+        TYPE_BATIMENT_STATION: [NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR, NOIR]  # TODO
     },
     PARAM_A_BATIMENT_NB_PLACES: {
         TYPE_BATIMENT_BASE: 5,
@@ -545,6 +567,16 @@ DIC_ELEMENTS = {
         TYPE_BATIMENT_TOURELLE: True,
         TYPE_BATIMENT_CASERNE: False,
         TYPE_BATIMENT_STATION: False
+    },
+    PARAM_A_BATIMENT_NB_VIES_REGEN: {
+        TYPE_BATIMENT_BASE: 0,
+        TYPE_BATIMENT_ENTREPOT: 0,
+        TYPE_BATIMENT_GUILDE: 0,
+        TYPE_BATIMENT_LABO: 0,
+        TYPE_BATIMENT_CENTRE: 0,
+        TYPE_BATIMENT_TOURELLE: 0,
+        TYPE_BATIMENT_CASERNE: 0,
+        TYPE_BATIMENT_STATION: 0.2
     },
     # Toutes les constructions (batiments + personnes) :
     PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION: {
@@ -732,14 +764,14 @@ NB_CONSTRUCTION_POSSIBLE_MAX = 3
 COEF_RAYONS_PERSONNES_CHEVAUCHEMENT = 0.8
 VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS = 2.5
 ALEA_MAX_PORTEURS_DEPLACEMENT_AUTO = 10
-ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE = lambda nb_personnes: int(2 * math.sqrt(nb_personnes) + 20 - 2)
+ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE = lambda n: int(2 * math.sqrt(n) + 18)
 ALEA_MAX_PERSONNES_DEPLACEMENT_SEUL = 0
 ALEA_MAX_PERSONNES_SORTIE_BATIMENT = 10
 ALEA_MAX_PERSONNES_UPDATE_CHEMIN = 0
 NB_CHOC_AVANT_ABANDON_OBJECTIF = 100
 COEF_RAYONS_DISTANCE_MAX_ABANDON_OBJECTIF = 0.8
 COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_GENERAL_PORTEUR = 10
-COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_CIBLE_SOLDAT = 3
+COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_CIBLE_SOLDAT = 4
 
 COULEUR_ELEMENT_SELECTION = ROUGE
 ANNEAU_SELECTION_DISTANCE = 10
@@ -1071,24 +1103,29 @@ COULEUR_BARRES_VIE_PANNEAU_SELECTION = VERT, 150
 CHEMIN_IMAGE_VIES_PANNEAU_SELECTION = 'Images/coeur.png'
 
 DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT = {
-    PARAM_A_VIES: lambda nb_vies: f"Nombre de vies max : {nb_vies}",
-    PARAM_A_PERSONNE_NB_PLACES: lambda nb_place: f"Nombre de place(s) : {nb_place}",
-    PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT: lambda vitesse: f"Vitesse de déplacement : {vitesse}",
-    PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX: lambda comptenu: f"Capacité de stockage : {comptenu}",
+    PARAM_A_VIES: lambda n: f"Nombre de vies max : {n}",
+    PARAM_A_PERSONNE_NB_PLACES: lambda n: f"Nombre de place(s) : {n}",
+    PARAM_A_ELEMENT_MOBILE_VITESSE_DEPLACEMENT: lambda v: f"Vitesse de déplacement : {v}",
+    PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX: lambda c: f"Capacité de stockage : {c}",
     PARAM_A_PORTEUR_PEUT_RECOLTER: lambda peut_recolter: ("Peut récolter" if peut_recolter else "Ne peut pas récolter"),
-    PARAM_A_TIREUR_FORCE_TIR: lambda force_tir: f"Force de tir : {force_tir}",
-    PARAM_A_TIREUR_DELAY_TIR: lambda delay_tir: f"Delais entre chaque tir : {delay_tir}",
-    PARAM_A_TIREUR_PORTEE_TIR: lambda portee_tir: f"Portée de tir : {portee_tir}",
-    PARAM_A_BATIMENT_NB_PLACES: lambda nb_place: f"Nombre de places : {nb_place}",
+    PARAM_A_TIREUR_FORCE_TIR: lambda f: f"Force de tir : {f}",
+    PARAM_A_TIREUR_DELAY_TIR: lambda d: f"Delais entre chaque tir : {d}",
+    PARAM_A_TIREUR_PORTEE_TIR: lambda p: f"Portée de tir : {p}",
+    PARAM_A_BATIMENT_NB_PLACES: lambda n: f"Nombre de places : {n}",
     PARAM_F_BATIMENT_LISTES_CONSTRUCTIONS_POSSIBLES:
-        lambda type_personne: f"Débloque construction : {DIC_ELEMENTS[PARAM_F_NOM][type_personne]}",
+        lambda t: f"Débloque construction : {DIC_ELEMENTS[PARAM_F_NOM][t]}",
     PARAM_F_BATIMENT_LISTES_AMELIORATIONS_POSSIBLES:
-        lambda type_amelioration: f"Débloque : {DIC_AMELIORATIONS[PARAM_AMELIORATION_NOM][type_amelioration]}"
+        lambda t: f"Débloque : {DIC_AMELIORATIONS[PARAM_AMELIORATION_NOM][t]}",
+    PARAM_A_BATIMENT_NB_VIES_REGEN:
+        lambda n: f"Vitesse vies régen : {n}"
 }
 
 # 1. Les batiments
 LISTE_PARAM_PANNEAU_INFOS_BATIMENT = [PARAM_A_VIES, PARAM_A_BATIMENT_NB_PLACES,
                                       PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX]
+LISTE_PARAM_PANNEAU_INFOS_BATIMENT_REGEN = [PARAM_A_VIES, PARAM_A_BATIMENT_NB_PLACES,
+                                            PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX,
+                                            PARAM_A_BATIMENT_NB_VIES_REGEN]
 LISTE_PARAM_PANNEAU_INFOS_BATIMENT_PEUT_TIRER = [PARAM_A_VIES, PARAM_A_BATIMENT_NB_PLACES,
                                                  PARAM_A_BATIMENT_PORTEUR_ARGENT_COMPTENU_MAX, PARAM_A_TIREUR_FORCE_TIR,
                                                  PARAM_A_TIREUR_DELAY_TIR, PARAM_A_TIREUR_PORTEE_TIR]

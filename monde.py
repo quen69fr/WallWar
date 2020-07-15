@@ -39,15 +39,15 @@ class Monde:
         for pos_source, type_source, nb_ressources in LISTE_SOURCES_INIT:
             self.add_source(Source(type_source, pos_source, nb_ressources))
 
-        for type_pers, x_carte, y_carte in LISTE_PERSONNE_INIT:
-            self.cree_personne(type_pers, x_carte, y_carte)
+        for type_personne, x_carte, y_carte in LISTE_PERSONNE_INIT:
+            self.cree_personne(type_personne, x_carte, y_carte)
 
     def get_element_fixe(self, i, j):
         for source in self.liste_sources:
             if source.case_dans_source(i, j):
                 return source
         for batiment in self.liste_batiments_constuits + self.liste_batiments_en_cours_de_construction:
-            if batiment.case_dans_source(i, j):
+            if batiment.case_dans_batiment(i, j):
                 return batiment
         return None
 
@@ -62,15 +62,15 @@ class Monde:
     # -------------------------------------------------
     #                     Personnes
     # -------------------------------------------------
-    def cree_personne(self, type_pers, x_carte, y_carte, objectif=None, alea=0):
-        if Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_PERSONNE:
-            self.add_personne(Personne(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
+    def cree_personne(self, type_personne, x_carte, y_carte, objectif=None, alea=0):
+        if Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_PERSONNE:
+            self.add_personne(Personne(type_personne, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
-        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_PORTEUR:
-            self.add_personne(Porteur(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
+        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_PORTEUR:
+            self.add_personne(Porteur(type_personne, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
-        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_pers] == TYPE_PERSONNE_CLASS_SOLDAT:
-            self.add_personne(Soldat(type_pers, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
+        elif Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][type_personne] == TYPE_PERSONNE_CLASS_SOLDAT:
+            self.add_personne(Soldat(type_personne, self.carte, x_carte, y_carte, objectif=objectif, alea=alea))
             return True
         return False
 
@@ -117,6 +117,12 @@ class Monde:
     def update_personnes(self):
         for personne in self.liste_personnes:
             personne.update()
+            if personne.nb_vies_malus > 0:
+                i_personne, j_personne = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
+                if self.carte.get_cases_grille(i_personne, j_personne) == TYPE_CASE_S_REGEN:
+                    for batiment in self.liste_batiments_constuits:
+                        if (i_personne, j_personne) in batiment.liste_cases_regen:
+                            personne.add_vies(batiment.nb_vies_regen)
         for personne in self.liste_personnes:
             if isinstance(personne, Porteur):
                 self.gere_transaction_a_effectuer(personne)
@@ -146,7 +152,7 @@ class Monde:
                 return
         for batiment in self.liste_batiments_constuits:
             i_clic, j_clic = self.carte.xy_carte_to_ij_case(x_carte_clic, y_carte_clic)
-            if batiment.clic(i_clic, j_clic):
+            if (i_clic, j_clic) in batiment.liste_cases_pleines:
                 soldat.new_cible(batiment)
                 return
         for personne in self.liste_personnes:
@@ -166,10 +172,10 @@ class Monde:
                     if abs(dy) < d_max:
                         d2 = dx ** 2 + dy ** 2
                         if d2 < d_max ** 2:
-                            d = math.sqrt(d2)
-                            if not d == 0:
+                            dist = math.sqrt(d2)
+                            if not dist == 0:
                                 somme_masses = personne1.masse_relative + personne2.masse_relative
-                                coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / d
+                                coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / dist
                                 for personne in [personne2, personne1]:
                                     personne.new_choc()
                                     coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
@@ -239,7 +245,8 @@ class Monde:
         x, y = self.carte.ij_case_to_centre_xy_carte(batiment.i, batiment.j)
         if batiment.type_explosion is not None:
             self.liste_explosions.append(Explosion(batiment.type_explosion, x, y))
-        self.carte.clear_case(batiment.liste_cases_depos + batiment.liste_cases_relais + batiment.liste_cases_pleines)
+        self.carte.clear_case(batiment.liste_cases_depos + batiment.liste_cases_relais +
+                              batiment.liste_cases_pleines + batiment.liste_cases_regen)
         for personne in self.liste_personnes:
             if isinstance(personne, Soldat):
                 if personne.cible == batiment:
@@ -279,7 +286,8 @@ class Monde:
 
     def add_batiment_fixe(self, batiment: Batiment):
         self.liste_batiments_en_cours_de_construction.append(batiment)
-        self.carte.add_batiment(batiment.liste_cases_pleines, batiment.liste_cases_relais, batiment.liste_cases_depos,
+        self.carte.add_batiment(batiment.liste_cases_pleines, batiment.liste_cases_relais,
+                                batiment.liste_cases_depos, batiment.liste_cases_regen,
                                 batiment_construit=batiment.etape_construction >= batiment.etape_construction_max)
         self.update_chemin_personnes()
 
@@ -301,7 +309,8 @@ class Monde:
                 self.element_selectionne in self.liste_batiments_en_cours_de_construction:
             self.carte.clear_case(self.element_selectionne.liste_cases_depos +
                                   self.element_selectionne.liste_cases_relais +
-                                  self.element_selectionne.liste_cases_pleines)
+                                  self.element_selectionne.liste_cases_pleines +
+                                  self.element_selectionne.liste_cases_regen)
             self.liste_batiments_en_cours_de_construction.remove(self.element_selectionne)
             self.element_selectionne = None
 
@@ -363,8 +372,8 @@ class Monde:
             x2, y2 = self.carte.xy_absolu_to_xy_carte(x_souris, y_souris)
             self.rect_clic_down_sur_carte = x, y, x2, y2
 
-    def gere_zoom(self, n: int, x_souris: int, y_souris: int):
-        if self.carte.zoom_dezoom(n, x_souris, y_souris):
+    def gere_zoom(self, sens: int, x_souris: int, y_souris: int):
+        if self.carte.zoom_dezoom(sens, x_souris, y_souris):
             for element_mobile in self.liste_personnes + self.liste_ennemis:
                 element_mobile.new_affichage = True
             for explosion in self.liste_explosions:

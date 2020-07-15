@@ -33,9 +33,9 @@ class Constructeur:
             return True
         return False
 
-    def annuler_construction(self, n):
-        if len(self.liste_type_elements_en_attente) > n:
-            del self.liste_type_elements_en_attente[n]
+    def annuler_construction(self, nb):
+        if len(self.liste_type_elements_en_attente) > nb:
+            del self.liste_type_elements_en_attente[nb]
             self.new_affichage = True
             return True
         return False
@@ -68,11 +68,11 @@ class Amelioreur:
                 return type_ameliration
         return None
 
-    def lance_amelioration(self, type_amelio):
-        if self.type_amelioration_en_cours is None and type_amelio in self.liste_ameliorations_possibles and\
-                type_amelio not in Amelioreur.liste_types_ameliorations_en_cours:
-            self.type_amelioration_en_cours = type_amelio
-            Amelioreur.liste_types_ameliorations_en_cours.append(type_amelio)
+    def lance_amelioration(self, type_amelioration):
+        if self.type_amelioration_en_cours is None and type_amelioration in self.liste_ameliorations_possibles and\
+                type_amelioration not in Amelioreur.liste_types_ameliorations_en_cours:
+            self.type_amelioration_en_cours = type_amelioration
+            Amelioreur.liste_types_ameliorations_en_cours.append(type_amelioration)
             self.avancement_amelioration = 0
             return True
         return False
@@ -105,6 +105,7 @@ class Batiment(Element):
         self.liste_cases_pleines = []
         self.liste_cases_relais = []
         self.liste_cases_depos = []
+        self.liste_cases_regen = []
         self.liste_cases_interdites_constuction = []
         self.update_position(i_centre, j_centre, carte)
 
@@ -117,8 +118,9 @@ class Batiment(Element):
         self._amelioreur = None
         self._tireur = None
 
-    def case_dans_source(self, i, j):
-        if (i, j) in self.liste_cases_pleines + self.liste_cases_relais + self.liste_cases_depos:
+    def case_dans_batiment(self, i, j):
+        if (i, j) in (self.liste_cases_pleines + self.liste_cases_relais +
+                      self.liste_cases_depos + self.liste_cases_regen):
             return True
         return False
 
@@ -167,16 +169,20 @@ class Batiment(Element):
     def update_position(self, i_centre: int, j_centre: int, carte: Carte):
         if not self.i == i_centre or not self.j == j_centre or (not self.liste_cases_pleines and
                                                                 not self.liste_cases_depos and
-                                                                not self.liste_cases_relais):
+                                                                not self.liste_cases_relais and
+                                                                not self.liste_cases_regen):
             self.i = i_centre
             self.j = j_centre
             self.liste_cases_pleines = [(i + self.i, j + self.j) for i, j in self.liste_cases_pleines_relatives]
             self.liste_cases_relais = [(i + self.i, j + self.j) for i, j in self.liste_cases_relais_relatives]
             self.liste_cases_depos = [(i + self.i, j + self.j) for i, j in self.liste_cases_depos_relatives]
+            self.liste_cases_regen = [(i + self.i, j + self.j) for i, j in self.liste_cases_regen_relatives]
 
             self.liste_cases_interdites_constuction = []
-            for i, j in self.liste_cases_pleines + self.liste_cases_relais + self.liste_cases_depos:
-                if not carte.get_cases_grille(i, j) == TYPE_CASE_VIDE:
+            for i, j in (self.liste_cases_pleines + self.liste_cases_relais +
+                         self.liste_cases_depos + self.liste_cases_regen):
+                if not (carte.get_cases_grille(i, j) == TYPE_CASE_VIDE or
+                        carte.get_cases_grille(i, j) == TYPE_CASE_S_REGEN):
                     self.liste_cases_interdites_constuction.append((i, j))
 
     def update_construction(self):
@@ -202,22 +208,22 @@ class Batiment(Element):
             return self.amelioreur.update()
         return None
 
-    def ajoute_construction_constructeur(self, type_personnage):
-        prix_argent = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION][type_personnage]
-        prix_liquide = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION][type_personnage]
+    def ajoute_construction_constructeur(self, type_personne):
+        prix_argent = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION][type_personne]
+        prix_liquide = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION][type_personne]
         if self.argent_comptenu >= prix_argent and Batiment.liquide_comptenu_general >= prix_liquide:
-            if self.constructeur.ajoute_construction(type_personnage):
+            if self.constructeur.ajoute_construction(type_personne):
                 self.argent_comptenu -= prix_argent
                 Batiment.liquide_comptenu_general -= prix_liquide
                 return True
         return False
 
-    def annule_construction_constructeur(self, n):
-        if len(self.constructeur.liste_type_elements_en_attente) > n:
-            type_personnage = self.constructeur.liste_type_elements_en_attente[n]
-            prix_argent = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION][type_personnage]
-            prix_liquide = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION][type_personnage]
-            if self.constructeur.annuler_construction(n):
+    def annule_construction_constructeur(self, nb):
+        if len(self.constructeur.liste_type_elements_en_attente) > nb:
+            type_personne = self.constructeur.liste_type_elements_en_attente[nb]
+            prix_argent = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_ARGENT_CONSTRUCTION][type_personne]
+            prix_liquide = Element.dic_elements[PARAM_F_BATIMENT_PERSONNE_PRIX_LIQUIDE_CONSTRUCTION][type_personne]
+            if self.constructeur.annuler_construction(nb):
                 self.argent_comptenu += prix_argent
                 if self.argent_comptenu > self.argent_comptenu_max:
                     self.argent_comptenu = self.argent_comptenu_max
@@ -225,11 +231,11 @@ class Batiment(Element):
                 return True
         return False
 
-    def lance_amelioration_amelioreur(self, type_amelio):
-        prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelio]
-        prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelio]
+    def lance_amelioration_amelioreur(self, type_amelioration):
+        prix_argent = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration]
+        prix_liquide = Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration]
         if self.argent_comptenu >= prix_argent and Batiment.liquide_comptenu_general >= prix_liquide:
-            if self.amelioreur.lance_amelioration(type_amelio):
+            if self.amelioreur.lance_amelioration(type_amelioration):
                 self.argent_comptenu -= prix_argent
                 Batiment.liquide_comptenu_general -= prix_liquide
                 return True
@@ -237,21 +243,22 @@ class Batiment(Element):
 
     def annule_amelioration_en_cours(self):
         if self.amelioreur is not None:
-            type_amelio = self._amelioreur.type_amelioration_en_cours
-            if type_amelio is not None:
+            type_amelioration = self._amelioreur.type_amelioration_en_cours
+            if type_amelioration is not None:
                 coef = 1 - (self._amelioreur.avancement_amelioration / self._amelioreur.avancement_ameliration_max)
                 self.argent_comptenu += \
-                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelio])
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_ARGENT][type_amelioration])
                 if self.argent_comptenu > self.argent_comptenu_max:
                     self.argent_comptenu = self.argent_comptenu_max
                 Batiment.liquide_comptenu_general += \
-                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelio])
+                    int(coef * Amelioreur.dic_ameliorations[PARAM_AMELIORATION_PRIX_LIQUIDE][type_amelioration])
                 self._amelioreur.annule_amelioration()
                 return True
         return False
 
     def clic(self, i_clic: int, j_clic: int):
-        if (i_clic, j_clic) in self.liste_cases_depos + self.liste_cases_relais + self.liste_cases_pleines:
+        if (i_clic, j_clic) in (self.liste_cases_depos + self.liste_cases_relais +
+                                self.liste_cases_pleines + self.liste_cases_regen):
             return True
         return False
 
@@ -274,19 +281,23 @@ class Batiment(Element):
 
                 if self.etape_construction < self.etape_construction_max:
                     alpha = int(self.etape_construction / self.etape_construction_max * 180)
-                    for n, (i, j) in enumerate(self.liste_cases_pleines):
+                    for nb, (i, j) in enumerate(self.liste_cases_pleines):
                         x, y = carte.ij_case_to_coin_xy_relatif(i, j)
                         draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
                                          DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_NON_CONSTRUITE])
-                        couleur = self.liste_couleur_cases_pleines[n]
+                        couleur = self.liste_couleur_cases_pleines[nb]
                         if not couleur == DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_NON_CONSTRUITE]:
                             draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
                                              (couleur, alpha))
                 else:
-                    for n, (i, j) in enumerate(self.liste_cases_pleines):
+                    for i, j in self.liste_cases_regen:
                         x, y = carte.ij_case_to_coin_xy_relatif(i, j)
                         draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
-                                         self.liste_couleur_cases_pleines[n])
+                                         DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_REGEN])
+                    for nb, (i, j) in enumerate(self.liste_cases_pleines):
+                        x, y = carte.ij_case_to_coin_xy_relatif(i, j)
+                        draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
+                                         self.liste_couleur_cases_pleines[nb])
             else:
                 for i, j in self.liste_cases_depos:
                     x, y = carte.ij_case_to_coin_xy_relatif(i, j)
@@ -305,7 +316,8 @@ class Batiment(Element):
                                      (DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_NON_CONSTRUITE], alpha))
 
         else:
-            for i, j in self.liste_cases_depos + self.liste_cases_pleines + self.liste_cases_relais:
+            for i, j in (self.liste_cases_depos + self.liste_cases_pleines +
+                         self.liste_cases_relais + self.liste_cases_regen):
                 x, y = carte.ij_case_to_coin_xy_relatif(i, j)
                 couleur_alpha = DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_POSSIBLE]
                 if (i, j) in self.liste_cases_interdites_constuction:
@@ -313,7 +325,8 @@ class Batiment(Element):
                 draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom), couleur_alpha)
 
     def affiche_selectionne(self, screen: pygame.Surface, carte: Carte):
-        for i, j in self.liste_cases_depos + self.liste_cases_relais + self.liste_cases_pleines:
+        for i, j in (self.liste_cases_depos + self.liste_cases_relais +
+                     self.liste_cases_pleines + self.liste_cases_regen):
             x, y = carte.ij_case_to_coin_xy_relatif(i, j)
             draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
                              DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_SELECTIONNEE])
@@ -338,13 +351,17 @@ class Batiment(Element):
         return Element.dic_elements[PARAM_F_BATIMENT_LISTE_CASES][self.type][TYPE_CASE_S_DEPOS]
 
     @property
+    def liste_cases_regen_relatives(self):
+        return Element.dic_elements[PARAM_F_BATIMENT_LISTE_CASES][self.type][TYPE_CASE_S_REGEN]
+
+    @property
     def liste_couleur_cases_pleines(self):
         return Element.dic_elements[PARAM_F_BATIMENT_LISTE_COULEURS_CASES_PLEINES][self.type]
 
     @property
     def nb_cases(self):
         return len(self.liste_cases_pleines_relatives + self.liste_cases_relais_relatives +
-                   self.liste_cases_depos_relatives)
+                   self.liste_cases_depos_relatives + self.liste_cases_regen_relatives)
 
     @property
     def nb_places(self):
@@ -412,3 +429,7 @@ class Batiment(Element):
                 self._tireur = None
 
         return self._tireur
+
+    @property
+    def nb_vies_regen(self):
+        return Element.dic_elements[PARAM_A_BATIMENT_NB_VIES_REGEN][self.type]

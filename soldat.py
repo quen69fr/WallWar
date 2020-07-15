@@ -13,6 +13,12 @@ class Soldat(Personne):
         self.immobile = False
         Personne.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
 
+    def update_chemin_et_position(self):
+        if self.cible is not None:
+            self.new_objectif_cible()
+        else:
+            Personne.update_chemin_et_position(self)
+
     def new_cible(self, cible: Element, cible_auto_portee_tir=False):
         self.cible = cible
         if not cible_auto_portee_tir:
@@ -126,12 +132,7 @@ class Soldat(Personne):
                         if self.objectif is not None:
                             i_cible, j_cible = self.carte.xy_carte_to_ij_case(self.cible.x_sur_carte,
                                                                               self.cible.y_sur_carte)
-                            if i_cible == self.ij_cible[0] and j_cible == self.ij_cible[1]:
-                                if len(self.chemin_liste_objectifs) == 0:
-                                    self.objectif = self.cible.x_sur_carte, self.cible.y_sur_carte
-                                else:
-                                    self.chemin_liste_objectifs[-1] = self.cible.x_sur_carte, self.cible.y_sur_carte
-                            else:
+                            if not (i_cible == self.ij_cible[0] and j_cible == self.ij_cible[1]):
                                 self.new_objectif_cible()
                         else:
                             self.new_objectif_cible()

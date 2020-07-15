@@ -23,6 +23,10 @@ def illustration_batiment(type_batiment, dimention_illustation: (int, int), cote
         draw_filled_rect(ecran_illustration, (x_centre_cases + i * cote_case,
                                               y_centre_cases + j * cote_case, cote_case, cote_case),
                          DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_RELAIS])
+    for i, j in Element.dic_elements[PARAM_F_BATIMENT_LISTE_CASES][type_batiment][TYPE_CASE_S_REGEN]:
+        draw_filled_rect(ecran_illustration, (x_centre_cases + i * cote_case,
+                                              y_centre_cases + j * cote_case, cote_case, cote_case),
+                         DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_REGEN])
     for n, (i, j) in enumerate(Element.dic_elements[PARAM_F_BATIMENT_LISTE_CASES][type_batiment][TYPE_CASE_PLEINE]):
         draw_filled_rect(ecran_illustration, (x_centre_cases + i * cote_case,
                                               y_centre_cases + j * cote_case, cote_case, cote_case),

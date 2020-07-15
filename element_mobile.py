@@ -84,13 +84,13 @@ class ElementMobile(Element):
 
             self.chemin_liste_objectifs = self.calcul_new_chemin_grille_liste_objectifs(i_pos, j_pos,
                                                                                         liste_cases_objectifs)
-            if not alea == 0:
-                x_obj, y_obj = self.chemin_liste_objectifs[0]
-                x_obj, y_obj = self.carte.ajoute_aleas_xy_carte(x_obj, y_obj, alea)
-                i_obj, j_obj = self.carte.xy_carte_to_ij_case(x_obj, y_obj)
-                self.chemin_liste_objectifs[0] = self.ajuste_xy_objectif(x_obj, y_obj, i_obj, j_obj)
-
             if len(self.chemin_liste_objectifs) > 0:
+                if not alea == 0:
+                    x_obj, y_obj = self.chemin_liste_objectifs[-1]
+                    x_obj, y_obj = self.carte.ajoute_aleas_xy_carte(x_obj, y_obj, alea)
+                    i_obj, j_obj = self.carte.xy_carte_to_ij_case(x_obj, y_obj)
+                    self.chemin_liste_objectifs[-1] = self.ajuste_xy_objectif(x_obj, y_obj, i_obj, j_obj)
+
                 self.objectif_suivant()
 
     def oriente_vers_point(self, x_obj, y_obj):
@@ -227,7 +227,9 @@ class ElementMobile(Element):
         self.objectif = None
 
     def update(self):
-        if self.objectif is not None:
+        if self.objectif is None:
+            self.nb_choc = 0
+        else:
             self.deplace()
             if self.test_ojectif_atteind():
                 self.objectif_suivant()

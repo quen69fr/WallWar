@@ -17,6 +17,11 @@ class Element:
     def recoit_tir(self, force_tir):
         self.nb_vies_malus += force_tir
 
+    def add_vies(self, nb_vies):
+        self.nb_vies_malus -= nb_vies
+        if self.nb_vies_malus < 0:
+            self.nb_vies_malus = 0
+
     @property
     def nom(self):
         return Element.dic_elements[PARAM_F_NOM][self.type]
