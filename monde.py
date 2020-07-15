@@ -122,7 +122,7 @@ class Monde:
                 if self.carte.get_cases_grille(i_personne, j_personne) == TYPE_CASE_S_REGEN:
                     for batiment in self.liste_batiments_constuits:
                         if (i_personne, j_personne) in batiment.liste_cases_regen:
-                            personne.add_vies(batiment.nb_vies_regen)
+                            personne.add_vies(batiment.nb_vies_regen * COEF_VITESSE_RECHAGRE_VIES)
         for personne in self.liste_personnes:
             if isinstance(personne, Porteur):
                 self.gere_transaction_a_effectuer(personne)
