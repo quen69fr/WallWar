@@ -309,7 +309,7 @@ class Monde:
         tireur = batiement.tireur
         if tireur is not None:
             if tireur.cible is None:
-                for ennemi in self.liste_ennemis + self.liste_personnes:  # TODO : temp
+                for ennemi in self.liste_ennemis:
                     if tireur.point_a_porter_de_tir(tireur.x, tireur.y, ennemi.x_float, ennemi.y_float):
                         tireur.new_cible(ennemi)
                         return

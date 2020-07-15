@@ -9,7 +9,6 @@ class TireurBatiment(Tireur):
         self.i, self.j = i, j
         self.x, self.y = 0, 0
         self.cible = None
-        self.nb_destructions = 0
         self.orientation_canon = 0
         self.new_affichage_canon = True
 

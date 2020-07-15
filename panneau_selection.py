@@ -62,7 +62,8 @@ class VignetteElementVie(ZoneClicable):
         barre_vie = barre_avancement((self.largeur - 2 * MARGE_PANNEAU_SELECTION, hauteur),
                                      COULEUR_BARRES_VIE_PANNEAU_SELECTION,
                                      max(0, self.infos_vies[0]) / self.infos_vies[1],
-                                     width=CONTOURS_BULLE_PANNEAU_SELECTION, couleur_bord=NOIR)
+                                     width=CONTOURS_BULLE_PANNEAU_SELECTION,
+                                     couleur_bord=COULEUR_COMPTENU_PANNEAU_SELECTION)
         self.ecran.blit(barre_vie, (MARGE_PANNEAU_SELECTION, self.hauteur - MARGE_PANNEAU_SELECTION - hauteur))
 
     def affiche(self, screen: pygame.Surface):
@@ -267,6 +268,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
     rect_presentation_amelioration = None
     bouton_amelioration = None
     bouton_amelioration_stop = None
+    largeur_vignette_cible = None
 
     def __init__(self, monde: Monde, batiment_selectionne, centre=False):
         if centre:
@@ -287,6 +289,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
         self.type_amelioration_presentee = None
         self.ecran_amelioration_presentee = None
         self.etat_batiment_infos = None
+        self.etat_et_vignette_info_cible_ecran_information = None, None
         self.init_mon_ecran_construction()
         self.init_mon_ecran_amelioration()
         self.mon_ecran_information.blit(self.ecran_informations, (0, 0))
@@ -404,11 +407,26 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                 else:
                     if self.bouton_amelioration.clic(x_relatif, y_relatif):
                         self.batiment.annule_amelioration_en_cours()
+            elif self.ecran_base == self.mon_ecran_information:
+                vignette = self.etat_et_vignette_info_cible_ecran_information[1]
+                # if vignette is not None:
+                if vignette is not None and isinstance(vignette, VignetteElementVie) \
+                        and vignette.clic(x_relatif, y_relatif):
+                    self.monde.element_selectionne = vignette.element
 
     def update(self):
         if self.ecran_base == self.mon_ecran_information:
-            etat_batiment_infos = [self.batiment.get_value_param(param)
-                                   for param in LISTE_PARAM_PANNEAU_INFOS_BATIMENT]
+            liste_params_infos_batiment = LISTE_PARAM_PANNEAU_INFOS_BATIMENT_PEUT_TIRER if self.batiment.peut_tirer \
+                else LISTE_PARAM_PANNEAU_INFOS_BATIMENT
+            etat_batiment_infos = [self.batiment.get_value_param(param) for param in liste_params_infos_batiment]
+            if self.batiment.peut_tirer:
+                etat_batiment_infos += [self.batiment.tireur.nb_destructions]
+                if not self.etat_et_vignette_info_cible_ecran_information == self.batiment.tireur.cible:
+                    if self.batiment.tireur.cible is None:
+                        self.etat_et_vignette_info_cible_ecran_information = \
+                            self.batiment.tireur.cible, self.etat_et_vignette_info_cible_ecran_information[1]
+                    else:
+                        self.etat_et_vignette_info_cible_ecran_information = self.batiment.tireur.cible, None
             if not etat_batiment_infos == self.etat_batiment_infos:
                 self.etat_batiment_infos = etat_batiment_infos
                 self.new_affichage = True
@@ -459,15 +477,42 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
 
     def update_affichage_informations(self):
         self.mon_ecran_information.blit(self.ecran_informations, (0, 0))
-        y = self.hauteur_bandeau + (self.hauteur_ecran - self.hauteur_bandeau) / 2
+        x_centre = int(self.largeur_ecran / 2)
+        if self.batiment.peut_tirer:
+            x_centre_texte_cible = int(MARGE_PANNEAU_SELECTION + self.largeur_vignette_cible / 2)
+            y_texte_cible = int(self.hauteur_bandeau + MARGE_PANNEAU_SELECTION * 0.8)
+            affiche_texte(TEXTE_PANNEAU_SELECTION_CIBLE, x_centre_texte_cible, y_texte_cible, self.ecran,
+                          taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.1),
+                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1)
+            x_centre = int((self.largeur_ecran - MARGE_PANNEAU_SELECTION - self.largeur_vignette_cible) / 2
+                           + MARGE_PANNEAU_SELECTION + self.largeur_vignette_cible)
+
+            y_texte_en_tout = y_texte_cible + self.largeur_vignette_cible + MARGE_PANNEAU_SELECTION * 0.6
+            # affiche_texte(TEXTE_PANNEAU_SELECTION_EN_TOUT, x_centre_texte_cible, y_texte_en_tout,
+            #               self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.9), x_0gauche_1centre_2droite=1,
+            #               couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
+            affiche_texte(str(self.batiment.tireur.nb_destructions) + ' ' +
+                          TEXTE_PANNEAU_SELECTION_NB_VICTIMES_SOLDAT, x_centre_texte_cible,
+                          int(y_texte_en_tout + MARGE_PANNEAU_SELECTION * 0.2 + TAILLE_TEXTE_PANNEAU_SELECTION * 0.9),
+                          self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.9), x_0gauche_1centre_2droite=1,
+                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
+            self.ecran.blit(ecran_illustration_vierge((self.largeur_vignette_cible, self.largeur_vignette_cible)),
+                            (MARGE_PANNEAU_SELECTION, int(self.hauteur_bandeau + TAILLE_TEXTE_PANNEAU_SELECTION +
+                                                          MARGE_PANNEAU_SELECTION)))
+            self.etat_et_vignette_info_cible_ecran_information = (self.etat_et_vignette_info_cible_ecran_information[0],
+                                                                  None)
+
         dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
-        y = int(y - dy * (len(LISTE_PARAM_PANNEAU_INFOS_BATIMENT) - 1) / 2)
-        for param in LISTE_PARAM_PANNEAU_INFOS_BATIMENT:
+        liste_params_infos_batiment = LISTE_PARAM_PANNEAU_INFOS_BATIMENT_PEUT_TIRER if self.batiment.peut_tirer \
+            else LISTE_PARAM_PANNEAU_INFOS_BATIMENT
+        y = self.hauteur_bandeau + (self.hauteur_ecran - self.hauteur_bandeau) / 2
+        y = int(y - dy * (len(liste_params_infos_batiment) - 1) / 2)
+        for param in liste_params_infos_batiment:
             val = self.batiment.get_value_param(param)
             if val is None:
                 val = '/'
             texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param](val)
-            affiche_texte(texte, int(self.largeur_ecran / 2), y,
+            affiche_texte(texte, x_centre, y,
                           self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 0.9),
                           couleur=COULEUR_TEXTE_BOUTONS_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
                           y_0haut_1centre_2bas=1)
@@ -506,7 +551,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
             self.ecran.blit(barre_amelioration, (x_barre, y_barre))
 
             affiche_texte(f'{pourcentage}%', int(x_barre + largeur_barre / 2), int(y_barre + hauteur_barre / 2 + 2),
-                          self.ecran,  taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4), x_0gauche_1centre_2droite=1,
+                          self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4), x_0gauche_1centre_2droite=1,
                           y_0haut_1centre_2bas=1, couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
         else:
             barre_amelioration = barre_avancement((largeur_barre, hauteur_barre),
@@ -561,6 +606,36 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
                               x_0gauche_1centre_2droite=1, y_0haut_1centre_2bas=1)
             self.ecran.blit(illustr, (x, y))
 
+    def update_et_affiche_vignette_cible(self):
+        if self.batiment.tireur.cible is None:
+            if self.etat_et_vignette_info_cible_ecran_information[0] is not None:
+                self.etat_et_vignette_info_cible_ecran_information = None, None
+                self.ecran.blit(ecran_illustration_vierge((self.largeur_vignette_cible, self.largeur_vignette_cible)),
+                                (MARGE_PANNEAU_SELECTION, int(self.hauteur_bandeau + TAILLE_TEXTE_PANNEAU_SELECTION
+                                                              + MARGE_PANNEAU_SELECTION)))
+        else:
+            if self.etat_et_vignette_info_cible_ecran_information[1] is None:
+                vignette = VignetteElementVie(self.batiment.tireur.cible, MARGE_PANNEAU_SELECTION,
+                                              int(self.hauteur_bandeau + TAILLE_TEXTE_PANNEAU_SELECTION +
+                                                  MARGE_PANNEAU_SELECTION), self.largeur_vignette_cible,
+                                              self.largeur_vignette_cible)
+                self.etat_et_vignette_info_cible_ecran_information = (self.batiment.tireur.cible, vignette)
+
+        vignette = self.etat_et_vignette_info_cible_ecran_information[1]
+        # if vignette is not None:
+        if vignette is not None and isinstance(vignette, VignetteElementVie):
+            vignette.update()
+            if vignette.new_affichage:
+                vignette.affiche(self.ecran)
+
+    def affiche(self, screen: pygame.Surface):
+        if self.new_affichage:
+            self.update_affichage()
+            self.new_affichage = False
+        if self.batiment.tireur is not None and self.ecran_base == self.mon_ecran_information:
+            self.update_et_affiche_vignette_cible()
+        screen.blit(self.ecran, (self.x_ecran, self.y_ecran))
+
 
 def init_panneau_construction_amelioration(rect_bulle: (int, int, int, int), pos_bulle: (int, int)):
     x_rect, y_rect, largeur_rect, hauteur_rect = rect_bulle
@@ -587,6 +662,10 @@ def init_panneau_construction_amelioration(rect_bulle: (int, int, int, int), pos
     largeur_diminuee = largeur - CONTOURS_BULLE_PANNEAU_SELECTION
     hauteur_diminuee = hauteur - CONTOURS_BULLE_PANNEAU_SELECTION
     largeur_sur_trois_diminuee = int(largeur_sur_trois - CONTOURS_BULLE_PANNEAU_SELECTION / 2)
+
+    PanneauConstructionAmeliorationBatiment.largeur_vignette_cible = int(hauteur - hauteur_bandeau -
+                                                                         MARGE_PANNEAU_SELECTION -
+                                                                         TAILLE_TEXTE_PANNEAU_SELECTION * 2.3)
 
     # L'ecran construction
     PanneauConstructionAmeliorationBatiment.ecran_construction = pygame.Surface((largeur, hauteur))
@@ -1098,7 +1177,7 @@ class PanneauSelection(PanneauClic):
                                                      self.x_ecran - x - 2 * MARGE_PANNEAU_SELECTION)
                         x_centre_cible = int(largeur_vignette_cible / 2 + x + MARGE_PANNEAU_SELECTION)
                         y_texte_cible = int(y_barre_vie + hauteur_barre_vie + MARGE_PANNEAU_SELECTION)
-                        affiche_texte(TEXTE_PANNEAU_SELECTION_CIBLE_SOLDAT, x_centre_cible, y_texte_cible, self.ecran,
+                        affiche_texte(TEXTE_PANNEAU_SELECTION_CIBLE, x_centre_cible, y_texte_cible, self.ecran,
                                       taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.2),
                                       couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1)
                         y_vignette_cible = int(y_texte_cible + TAILLE_TEXTE_PANNEAU_SELECTION * 1.15 +

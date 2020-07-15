@@ -902,7 +902,7 @@ class PanneauSelection(PanneauClic):
                                                      self.x_ecran - x - 2 * MARGE_PANNEAU_SELECTION)
                         x_centre_cible = int(largeur_vignette_cible / 2 + x + MARGE_PANNEAU_SELECTION)
                         y_texte_cible = int(y_barre_vie + hauteur_barre_vie + MARGE_PANNEAU_SELECTION)
-                        affiche_texte(TEXTE_PANNEAU_SELECTION_CIBLE_SOLDAT, x_centre_cible, y_texte_cible, self.ecran,
+                        affiche_texte(TEXTE_PANNEAU_SELECTION_CIBLE, x_centre_cible, y_texte_cible, self.ecran,
                                       taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.2),
                                       couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1)
                         y_vignette_cible = int(y_texte_cible + TAILLE_TEXTE_PANNEAU_SELECTION * 1.15 +
