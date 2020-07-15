@@ -29,6 +29,9 @@ class ElementMobile(Element):
             self.new_objectif(objectif[0], objectif[1], alea=alea)
         self.choix_mouvement = choix_mouvement
 
+        self.nb_choc = 0
+        self.pos_last_choc = 0, 0
+
         self.new_affichage = True
 
     # -------------------------------------------------
@@ -193,6 +196,21 @@ class ElementMobile(Element):
     # -------------------------------------------------
     #                     Evenements
     # -------------------------------------------------
+    def new_choc(self, nb_chocs_max=NB_CHOC_AVANT_ABANDON_OBJECTIF):
+        old_x, old_y = self.pos_last_choc
+        if (self.x_sur_carte - old_x) ** 2 + (self.y_sur_carte - old_y) ** 2 < \
+                self.rayon * COEF_RAYONS_DISTANCE_MAX_ABANDON_OBJECTIF:
+            self.nb_choc += 1
+            if self.nb_choc > nb_chocs_max / (4 + self.masse_relative) * 5:
+                self.objectif = None
+                self.chemin_liste_objectifs = []
+                self.nb_choc = 0
+                return True
+        else:
+            self.pos_last_choc = self.x_sur_carte, self.y_sur_carte
+            self.nb_choc = 1
+        return False
+
     def deplace(self):
         self.deplace_dx_dy(self.vitesse_deplacement * math.cos(self._orientation),
                            - self.vitesse_deplacement * math.sin(self._orientation))

@@ -143,6 +143,14 @@ class Porteur(Personne):
                 return True
             return False
 
+    def new_choc(self, nb_chocs_max=NB_CHOC_AVANT_ABANDON_OBJECTIF):
+        if self.objectif_global is not None:
+            nb_chocs_max = int(nb_chocs_max * COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_GENERAL_PORTEUR)
+        if Personne.new_choc(self, nb_chocs_max):
+            self.objectif_global = None
+            return True
+        return False
+
     def update_ecran_original(self):
         self.ecran_original = self.reel_ecran_original.copy()
         if not self.ressource_comptenu == 0:

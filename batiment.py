@@ -296,7 +296,8 @@ class Batiment(Element):
                     draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
                                      DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_RELAIS])
 
-                alpha = int((1 + self.argent_comptenu / self.prix_construction) * 255)
+                alpha = ALPHA_MIN_COULEUR_CASE_NON_CONSTRUITES + int((1 + self.argent_comptenu / self.prix_construction)
+                                                                     * (255 - ALPHA_MIN_COULEUR_CASE_NON_CONSTRUITES))
                 for i, j in self.liste_cases_pleines:
                     x, y = carte.ij_case_to_coin_xy_relatif(i, j)
                     draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),

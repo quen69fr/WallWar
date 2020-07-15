@@ -9,6 +9,7 @@ class Soldat(Personne):
                  orientation=0, alea=0):
         self.cible: ElementMobile or Batiment or None = None
         self.tireur = Tireur(type_personne)
+        self.ij_cible = 0, 0
         self.immobile = False
         Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
 
@@ -44,6 +45,10 @@ class Soldat(Personne):
 
     def new_objectif_cible(self):
         self.new_objectif_liste_cases(self.get_cases_porter_tir_autour_cible())
+        if isinstance(self.cible, Batiment):
+            self.ij_cible = self.cible.i, self.cible.j
+        elif isinstance(self.cible, ElementMobile):
+            self.ij_cible = self.carte.xy_carte_to_ij_case(self.cible.x_sur_carte, self.cible.y_sur_carte)
 
     def tir_si_possible(self):
         if self.cible is not None and \
@@ -77,6 +82,14 @@ class Soldat(Personne):
         self.stop()
         self.immobile = True
 
+    def new_choc(self, nb_chocs_max=NB_CHOC_AVANT_ABANDON_OBJECTIF):
+        if self.cible is not None:
+            nb_chocs_max = int(nb_chocs_max * COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_CIBLE_SOLDAT)
+        if Personne.new_choc(self, nb_chocs_max):
+            self.cible = None
+            return True
+        return False
+
     def update(self):
         Personne.update(self)
         self.tireur.update()
@@ -104,21 +117,20 @@ class Soldat(Personne):
                         self.cible = None
                     else:
                         if self.objectif is not None:
-                            if not self.chemin_liste_objectifs:
-                                self.new_objectif_cible()
-                            else:
-                                i_cible, j_cible = self.carte.xy_carte_to_ij_case(self.cible.x_sur_carte,
-                                                                                  self.cible.y_sur_carte)
-                                x_obj, y_obj = self.chemin_liste_objectifs[-1]
-                                i_obj, j_obj = self.carte.xy_carte_to_ij_case(x_obj, y_obj)
-                                if i_cible == i_obj and j_cible == j_obj:
-                                    self.chemin_liste_objectifs[-1] = self.cible.x_sur_carte, self.cible.y_sur_carte
+                            i_cible, j_cible = self.carte.xy_carte_to_ij_case(self.cible.x_sur_carte,
+                                                                              self.cible.y_sur_carte)
+                            if i_cible == self.ij_cible[0] and j_cible == self.ij_cible[1]:
+                                if len(self.chemin_liste_objectifs) == 0:
+                                    self.objectif = self.cible.x_sur_carte, self.cible.y_sur_carte
                                 else:
-                                    self.new_objectif_cible()
+                                    self.chemin_liste_objectifs[-1] = self.cible.x_sur_carte, self.cible.y_sur_carte
+                            else:
+                                self.new_objectif_cible()
                         else:
                             self.new_objectif_cible()
                 elif isinstance(self.cible, Batiment):
-                    self.new_objectif_cible()
+                    if self.objectif is None:
+                        self.new_objectif_cible()
 
     def affiche_tireur(self, screen: pygame.Surface):
         self.tireur.affiche(screen, self.carte, self.x_sur_carte, self.y_sur_carte)

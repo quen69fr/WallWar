@@ -164,10 +164,10 @@ class Monde:
                                 somme_masses = personne1.masse_relative + personne2.masse_relative
                                 coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / d
                                 for personne in [personne2, personne1]:
-                                    # if personne.objectif is None:
+                                    personne.new_choc()
                                     coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
                                     if personne == personne1:
-                                        coef_relatif *= -1
+                                        coef_relatif *= - 1
                                     old_i, old_j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte,
                                                                                   personne.y_sur_carte)
                                     personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
@@ -423,8 +423,8 @@ class Monde:
             for element in liste:
                 if isinstance(element, ElementMobile) and element.choix_mouvement:
                     x_carte_clic, y_carte_clic = self.carte.xy_absolu_to_xy_carte(x_souris, y_souris)
-                    alea = ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE if type(self.element_selectionne) == list \
-                        else ALEA_MAX_PERSONNES_DEPLACEMENT_SEUL
+                    alea = ALEA_MAX_PERSONNES_DEPLACEMENT_GROUPE(len(self.element_selectionne))\
+                        if type(self.element_selectionne) == list else ALEA_MAX_PERSONNES_DEPLACEMENT_SEUL
                     if isinstance(element, Soldat):
                         self.gere_new_objectif_cible_soldat(element, x_carte_clic, y_carte_clic, alea=alea)
                     else:
