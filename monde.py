@@ -51,6 +51,14 @@ class Monde:
                 return batiment
         return None
 
+    def remove_cible(self, cible: Element):
+        if isinstance(cible, Personne):
+            self.remove_personne(cible)
+        elif isinstance(cible, Ennemi):
+            pass
+        elif isinstance(cible, Batiment):
+            self.remove_batiement_constuit(cible)
+
     # -------------------------------------------------
     #                     Personnes
     # -------------------------------------------------
@@ -86,7 +94,11 @@ class Monde:
         for pers in self.liste_personnes:
             if isinstance(pers, Soldat):
                 if pers.cible == personne:
-                    pers.cible = None
+                    pers.annule_cible()
+        for bat in self.liste_batiments_constuits:
+            if bat.peut_tirer:
+                if bat.tireur.cible == personne:
+                    bat.tireur.annule_cible()
 
     def gere_transaction_a_effectuer(self, porteur: Porteur):
         if len(porteur.liste_transaction_a_effectuer) > 0:
@@ -115,12 +127,7 @@ class Monde:
                     if personne.tir_si_possible():
                         self.cree_explosion_tir(personne)
                         if personne.cible.nb_vies <= 0:
-                            if isinstance(personne.cible, Personne):
-                                self.remove_personne(personne.cible)
-                            elif isinstance(personne.cible, Ennemi):
-                                pass
-                            elif isinstance(personne.cible, Batiment):
-                                self.remove_batiement_constuit(personne.cible)
+                            self.remove_cible(personne.cible)
                             personne.tireur.nb_destructions += 1
         self.gere_chevauchements_personnes()
 
@@ -258,6 +265,8 @@ class Monde:
 
     def update_batiments_constuits(self):
         for batiment in self.liste_batiments_constuits:
+            if batiment.peut_tirer:
+                self.update_tireur_batiment(batiment)
             type_construction_prete = batiment.update_constructeur()
             if type_construction_prete is not None and self.nb_places_personnes_max >= self.nb_places_personnes + \
                     Element.dic_elements[PARAM_A_PERSONNE_NB_PLACES][type_construction_prete]:
@@ -296,6 +305,21 @@ class Monde:
             self.liste_batiments_en_cours_de_construction.remove(self.element_selectionne)
             self.element_selectionne = None
 
+    def update_tireur_batiment(self, batiement: Batiment):
+        tireur = batiement.tireur
+        if tireur is not None:
+            if tireur.cible is None:
+                for ennemi in self.liste_ennemis + self.liste_personnes:  # TODO : temp
+                    if tireur.point_a_porter_de_tir(tireur.x, tireur.y, ennemi.x_float, ennemi.y_float):
+                        tireur.new_cible(ennemi)
+                        return
+
+            if tireur.update_general(self.carte):
+                self.cree_explosion_tir(batiement)
+                if tireur.cible.nb_vies <= 0:
+                    self.remove_cible(tireur.cible)
+                    tireur.nb_destructions += 1
+
     @property
     def nb_places_personnes_max(self):
         nb_places = 0
@@ -310,6 +334,8 @@ class Monde:
         x_centre, y_centre, orientation = None, None, None
         if isinstance(element, ElementMobile):
             x_centre, y_centre, orientation = element.x_float, element.y_float, element.orientation
+        elif isinstance(element, Batiment):
+            x_centre, y_centre, orientation = element.tireur.x, element.tireur.y, element.tireur.orientation_canon
 
         if x_centre is not None:
             self.liste_explosions.append(explosion_tireur(element.tireur.type_explosion_tir,
@@ -343,6 +369,9 @@ class Monde:
                 element_mobile.new_affichage = True
             for explosion in self.liste_explosions:
                 explosion.new_affichage = True
+            for batiment in self.liste_batiments_constuits:
+                if batiment.tireur is not None:
+                    batiment.tireur.new_affichage_canon = True
             self.new_affichage_static = True
 
     def gere_clic_down(self, x_souris: int, y_souris: int):
@@ -474,6 +503,10 @@ class Monde:
 
         for batiment in self.liste_batiments_en_cours_de_construction:
             batiment.affiche(self.ecran_complet, self.carte)
+
+        for batiment in self.liste_batiments_constuits:
+            if batiment.tireur is not None:
+                batiment.tireur.affiche_canon(self.ecran_complet, self.carte)
 
         if self.batiment_en_construction is not None:
             self.batiment_en_construction.affiche(self.ecran_complet, self.carte)

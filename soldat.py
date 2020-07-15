@@ -5,18 +5,23 @@ from tireur import *
 
 
 class Soldat(Personne):
-    def __init__(self, type_personne, carte: Carte, x_sur_carte: int, y_sur_carte: int, objectif: (int, int) = None,
+    def __init__(self, type_pers, carte: Carte, x_sur_carte: int, y_sur_carte: int, objectif: (int, int) = None,
                  orientation=0, alea=0):
         self.cible: ElementMobile or Batiment or None = None
-        self.tireur = Tireur(type_personne)
+        self.tireur = Tireur(type_pers)
         self.ij_cible = 0, 0
         self.immobile = False
-        Personne.__init__(self, type_personne, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
+        Personne.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
 
     def new_cible(self, cible: Element, cible_auto_portee_tir=False):
         self.cible = cible
         if not cible_auto_portee_tir:
             self.new_objectif_cible()
+
+    def annule_cible(self):
+        self.cible = None
+        self.objectif = None
+        self.chemin_liste_objectifs = []
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
                      j_objectif: int = None, modification_chemin_seulement=False, alea=0):
@@ -98,8 +103,9 @@ class Soldat(Personne):
                 if self.objectif is not None and isinstance(self.cible, Batiment):
                     x_batiment, y_batiment = self.carte.ij_case_to_centre_xy_carte(self.cible.i, self.cible.j)
                     ancienne_orientation = self._orientation
+                    ancien_affichage = self.new_affichage
                     self.oriente_vers_point(x_batiment, y_batiment)
-                    if abs(ancienne_orientation - self._orientation) < 0.001:
+                    if not ancien_affichage and abs(ancienne_orientation - self._orientation) < 0.001:
                         self.new_affichage = False
                 self.objectif = None
                 self.chemin_liste_objectifs = []
@@ -108,8 +114,9 @@ class Soldat(Personne):
                         self.oriente_vers_point(self.cible.x_sur_carte, self.cible.y_sur_carte)
                     else:
                         ancienne_orientation = self._orientation
+                        ancien_affichage = self.new_affichage
                         self.oriente_vers_point(self.cible.x_sur_carte, self.cible.y_sur_carte)
-                        if abs(ancienne_orientation - self._orientation) < 0.0001:
+                        if not ancien_affichage and abs(ancienne_orientation - self._orientation) < 0.0001:
                             self.new_affichage = False
             else:
                 if isinstance(self.cible, ElementMobile):

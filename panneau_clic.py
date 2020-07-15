@@ -28,6 +28,15 @@ def illustration_batiment(type_batiment, dimention_illustation: (int, int), cote
                                               y_centre_cases + j * cote_case, cote_case, cote_case),
                          Element.dic_elements[PARAM_F_BATIMENT_LISTE_COULEURS_CASES_PLEINES][type_batiment][n])
 
+    if Element.dic_elements[PARAM_F_BATIMENT_PEUT_TIRER][type_batiment]:
+        canon = pygame.transform.rotozoom(loaded_images(
+            Element.dic_elements[PARAM_F_BATIMENT_TIREUR_CHEMIN_IMAGE_CANON][type_batiment]), random.randint(0, 360),
+            (Element.dic_elements[PARAM_F_BATIMENT_TIREUR_SCALE_IMAGE_CANON_ZOOM][type_batiment]
+             * cote_case / COTE_CASES_GRILLE))
+        larg, haut = canon.get_size()
+        ecran_illustration.blit(canon, (int(largeur_ecran_illustration / 2 - larg / 2),
+                                        int(hauteur_ecran_illustration / 2 - haut / 2)))
+
     return ecran_illustration
 
 

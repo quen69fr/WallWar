@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from element import *
+from tireur_batiment import *
 
 
 class Constructeur:
@@ -115,6 +115,7 @@ class Batiment(Element):
         self._constructeur = None
         self.point_sortie_constructions = None
         self._amelioreur = None
+        self._tireur = None
 
     def case_dans_source(self, i, j):
         if (i, j) in self.liste_cases_pleines + self.liste_cases_relais + self.liste_cases_depos:
@@ -311,7 +312,7 @@ class Batiment(Element):
                     couleur_alpha = DIC_CASES_SPECIALES[PARAM_CASE_S_COULEUR][TYPE_CASE_S_IMPOSSIBLE]
                 draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom), couleur_alpha)
 
-    def affiche_selectionne(self, screen, carte: Carte):
+    def affiche_selectionne(self, screen: pygame.Surface, carte: Carte):
         for i, j in self.liste_cases_depos + self.liste_cases_relais + self.liste_cases_pleines:
             x, y = carte.ij_case_to_coin_xy_relatif(i, j)
             draw_filled_rect(screen, (x, y, carte.cote_case_zoom, carte.cote_case_zoom),
@@ -320,6 +321,9 @@ class Batiment(Element):
             x, y = self.point_sortie_constructions
             x, y = carte.xy_carte_to_xy_relatif(x, y)
             draw_filled_circle(screen, (x, y), 3, COULEUR_ELEMENT_SELECTION)
+        if self.tireur is not None and self.argent_comptenu >= 0 and \
+                self.etape_construction >= self.etape_construction_max:
+            self._tireur.affiche_selectionne(screen, carte)
 
     @property
     def liste_cases_pleines_relatives(self):
@@ -393,3 +397,18 @@ class Batiment(Element):
                     self._amelioreur.new_affichage = True
 
         return self._amelioreur
+
+    @property
+    def peut_tirer(self):
+        return Element.dic_elements[PARAM_F_BATIMENT_PEUT_TIRER][self.type]
+
+    @property
+    def tireur(self):
+        if self.peut_tirer:
+            if self._tireur is None:
+                self._tireur = TireurBatiment(self.type, self.i, self.j)
+        else:
+            if self._tireur is not None:
+                self._tireur = None
+
+        return self._tireur
