@@ -64,14 +64,13 @@ class ElementMobile(Element):
         if i_objectif is None or j_objectif is None:
             i_objectif, j_objectif = self.carte.xy_carte_to_ij_case(x_carte, y_carte)
         case_obj = self.carte.get_cases_grille(i_objectif, j_objectif)
-        if not case_obj == TYPE_CASE_INEXISTANTE:
+        if not case_obj == TYPE_CASE_INEXISTANTE and not case_obj == TYPE_CASE_PLEINE:
             x_obj, y_obj = self.ajuste_xy_objectif(x_carte, y_carte, i_objectif, j_objectif)
             if i_pos == i_objectif and j_pos == j_objectif:
                 self.chemin_liste_objectifs = [(x_obj, y_obj)]
             else:
-                if not case_obj == TYPE_CASE_PLEINE:
-                    self.chemin_liste_objectifs = self.calcul_new_chemin_grille_objectif_xy(x_obj, y_obj, i_pos, j_pos,
-                                                                                            i_objectif, j_objectif)
+                self.chemin_liste_objectifs = self.calcul_new_chemin_grille_objectif_xy(x_obj, y_obj, i_pos, j_pos,
+                                                                                        i_objectif, j_objectif)
             if len(self.chemin_liste_objectifs) > 0:
                 self.objectif_suivant()
 
@@ -114,8 +113,8 @@ class ElementMobile(Element):
             return
         self.objectif = self.chemin_liste_objectifs[0]
         if self.test_ojectif_atteind():
-            del self.chemin_liste_objectifs[0]
             self.objectif = None
+            self.chemin_liste_objectifs = []
             return
         self.oriente_vers_point(self.objectif[0], self.objectif[1])
         del self.chemin_liste_objectifs[0]

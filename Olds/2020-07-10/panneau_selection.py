@@ -770,7 +770,7 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
                 type_class_element_selec = \
                     Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
                 etat_element_selectionne = [self.element_selectionne.get_value_param(param) for param in
-                                            DIC_LISTE_PARAM_PANNEAU_INFOS_ELEMENT_MOBILE[type_class_element_selec]]
+                                            DIC_LISTE_PARAM_PANNEAU_INFOS_PERSONNES[type_class_element_selec]]
 
             if not etat_element_selectionne == self.etat_element_selectionne:
                 self.etat_element_selectionne = etat_element_selectionne
@@ -783,7 +783,7 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
         dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
         type_class_element_selec = \
             Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
-        liste_param = DIC_LISTE_PARAM_PANNEAU_INFOS_ELEMENT_MOBILE[type_class_element_selec]
+        liste_param = DIC_LISTE_PARAM_PANNEAU_INFOS_PERSONNES[type_class_element_selec]
         y = int(y - dy * (len(liste_param) - 1) / 2)
         for param in liste_param:
             val = self.element_selectionne.get_value_param(param)

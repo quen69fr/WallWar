@@ -227,11 +227,12 @@ def ecran_amelioration(largeur, hauteur, type_amelioration_presentee, grisee=Fal
             nom_element = Element.dic_elements[PARAM_F_NOM][type_e]
 
             ancienne_valeur = Element.dic_elements[param_a][type_e]
-            if type(ancienne_valeur) == int and type(new_value) == int:
+            if (type(ancienne_valeur) == int or type(ancienne_valeur) == float) and \
+                    (type(new_value) == int or type(new_value) == float):
                 if new_value >= ancienne_valeur:
-                    valeur = f'{ancienne_valeur} + {new_value - ancienne_valeur}'
+                    valeur = f'{round(ancienne_valeur, 1)} + {round(new_value - ancienne_valeur, 1)}'
                 else:
-                    valeur = f'{ancienne_valeur} - {ancienne_valeur - new_value}'
+                    valeur = f'{round(ancienne_valeur, 1)} - {round(ancienne_valeur - new_value, 1)}'
             else:
                 valeur = new_value
             texte = DIC_TEXTE_PARAM_PANNEAU_INFOS_ELEMENT_SELECT[param_a](valeur)
@@ -849,17 +850,22 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
     def update(self):
         if not self.element_selectionne == self.monde.element_selectionne:
             self.element_selectionne = self.monde.element_selectionne
-            if isinstance(self.element_selectionne, Porteur) or isinstance(self.element_selectionne, Soldat):
+            if isinstance(self.element_selectionne, Porteur) or isinstance(self.element_selectionne, Soldat) or \
+                    isinstance(self.element_selectionne, Ennemi):
                 self.doit_s_afficher = True
             else:
                 self.doit_s_afficher = False
         if self.doit_s_afficher:
             etat_element_selectionne = None
             if isinstance(self.element_selectionne, ElementMobile):
-                type_class_element_selec = \
-                    Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
+                if isinstance(self.element_selectionne, Ennemi):
+                    liste_params = LISTE_PARAM_PANNEAU_INFOS_ENNEMIS
+                else:
+                    type_class_element_selec = \
+                        Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
+                    liste_params = DIC_LISTE_PARAM_PANNEAU_INFOS_PERSONNES[type_class_element_selec]
                 etat_element_selectionne = [self.element_selectionne.get_value_param(param) for param in
-                                            DIC_LISTE_PARAM_PANNEAU_INFOS_ELEMENT_MOBILE[type_class_element_selec]]
+                                            liste_params]
 
             if not etat_element_selectionne == self.etat_element_selectionne:
                 self.etat_element_selectionne = etat_element_selectionne
@@ -870,11 +876,14 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
         y = TAILLE_TEXTE_PANNEAU_SELECTION + MARGE_PANNEAU_SELECTION * 0.5
         y = y + (self.hauteur_ecran - y) / 2
         dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
-        type_class_element_selec = \
-            Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
-        liste_param = DIC_LISTE_PARAM_PANNEAU_INFOS_ELEMENT_MOBILE[type_class_element_selec]
-        y = int(y - dy * (len(liste_param) - 1) / 2)
-        for param in liste_param:
+        if isinstance(self.element_selectionne, Ennemi):
+            liste_params = LISTE_PARAM_PANNEAU_INFOS_ENNEMIS
+        else:
+            type_class_element_selec = \
+                Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
+            liste_params = DIC_LISTE_PARAM_PANNEAU_INFOS_PERSONNES[type_class_element_selec]
+        y = int(y - dy * (len(liste_params) - 1) / 2)
+        for param in liste_params:
             val = self.element_selectionne.get_value_param(param)
             if val is None:
                 val = '/'
@@ -998,6 +1007,16 @@ class PanneauSelection(PanneauClic):
                     self.new_affichage = True
                     self.etat_element_selectionne = etat_soldat
 
+            elif isinstance(self.element_selectionne, Ennemi):
+                etat_ennemi = (self.element_selectionne.nb_vies,
+                               self.element_selectionne.nb_vies_max,
+                               self.element_selectionne.objectif is None and self.element_selectionne.cible is None,
+                               self.element_selectionne.cible,
+                               self.element_selectionne.tireur.nb_destructions)
+                if not self.etat_element_selectionne == etat_ennemi:
+                    self.new_affichage = True
+                    self.etat_element_selectionne = etat_ennemi
+
             elif isinstance(self.element_selectionne, Source):
                 etat_source = self.element_selectionne.ressource_comptenu
                 if not self.etat_element_selectionne == etat_source:
@@ -1116,6 +1135,8 @@ class PanneauSelection(PanneauClic):
                                     PanneauConstructionAmeliorationBatiment(self.monde, self.element_selectionne, True)
 
                 elif isinstance(self.element_selectionne, ElementMobile):
+                    affiche_cible = False
+
                     if self.panneau_infos_selection_element_mobile is None:
                         y_panneau_selection_element_mobile = (y_barre_vie + hauteur_barre_vie
                                                               + MARGE_PANNEAU_SELECTION)
@@ -1129,52 +1150,73 @@ class PanneauSelection(PanneauClic):
                         if isinstance(self.element_selectionne, Soldat) and self.element_selectionne.cible is not None:
                             titre = TEXTE_PANNEAU_SELECTION_PERSONNE_ACTIVE
                         else:
-                            titre = TEXTE_PANNEAU_SELECTION_PERSONNE_INACTIVE
+                            if isinstance(self.element_selectionne, Ennemi):
+                                if self.element_selectionne.cible is None:
+                                    titre = TEXTE_PANNEAU_SELECTION_ENNEMI_INACTIF
+                                else:
+                                    titre = TEXTE_PANNEAU_SELECTION_ENNEMI_ACTIF
+                            else:
+                                titre = TEXTE_PANNEAU_SELECTION_PERSONNE_INACTIVE
                     else:
-                        titre = TEXTE_PANNEAU_SELECTION_PERSONNE_ACTIVE
+                        if isinstance(self.element_selectionne, Ennemi):
+                            titre = TEXTE_PANNEAU_SELECTION_ENNEMI_ACTIF
+                        else:
+                            titre = TEXTE_PANNEAU_SELECTION_PERSONNE_ACTIVE
 
                     x_bouton_stop = (x + X_PANNEAU_INFOS_ELEMENT_MOBILE + LARGEUR_PANNEAU_INFOS_ELEMENT_MOBILE
                                      + int(MARGE_PANNEAU_SELECTION * 0.9))
                     cote_bouton_stop = x + largeur - x_bouton_stop - MARGE_PANNEAU_SELECTION
-                    self.liste_boutons_ecran.append(BoutonImage(x_bouton_stop, (y + hauteur - cote_bouton_stop
-                                                                                - MARGE_PANNEAU_SELECTION),
-                                                                cote_bouton_stop, cote_bouton_stop,
-                                                                TYPE_BOUTON_IMAGE_STOP))
+                    if isinstance(self.element_selectionne, Personne):
+                        self.liste_boutons_ecran.append(BoutonImage(x_bouton_stop, (y + hauteur - cote_bouton_stop
+                                                                                    - MARGE_PANNEAU_SELECTION),
+                                                                    cote_bouton_stop, cote_bouton_stop,
+                                                                    TYPE_BOUTON_IMAGE_STOP))
 
-                    if isinstance(self.element_selectionne, Porteur):
-                        infos_barre_ressource = (self.element_selectionne.ressource_comptenu,
-                                                 self.element_selectionne.ressource_comptenu_max,
-                                                 self.element_selectionne.type_ressource_comptenu)
-                        x_textes_ressource_en_tout = (DIMENTION_BARRES_PANNEAU_SELECTION[1] +
-                                                      MARGE_PANNEAU_SELECTION * 1.5)
-                        x_textes_ressource_en_tout = int(x + x_textes_ressource_en_tout +
-                                                         (X_PANNEAU_INFOS_ELEMENT_MOBILE - x_textes_ressource_en_tout)
-                                                         / 2)
-                        y_textes_ressource_en_tout_centre = y_barre_vie + hauteur_barre_vie + MARGE_PANNEAU_SELECTION
-                        y_textes_ressource_en_tout_centre = int(y_textes_ressource_en_tout_centre +
-                                                                (y + hauteur - MARGE_PANNEAU_SELECTION -
-                                                                 y_textes_ressource_en_tout_centre) / 2)
+                        if isinstance(self.element_selectionne, Porteur):
+                            infos_barre_ressource = (self.element_selectionne.ressource_comptenu,
+                                                     self.element_selectionne.ressource_comptenu_max,
+                                                     self.element_selectionne.type_ressource_comptenu)
+                            x_textes_ressource_en_tout = (DIMENTION_BARRES_PANNEAU_SELECTION[1] +
+                                                          MARGE_PANNEAU_SELECTION * 1.5)
+                            x_textes_ressource_en_tout = int(x + x_textes_ressource_en_tout +
+                                                             (X_PANNEAU_INFOS_ELEMENT_MOBILE -
+                                                              x_textes_ressource_en_tout) / 2)
+                            y_textes_ressource_en_tout_centre = (y_barre_vie + hauteur_barre_vie +
+                                                                 MARGE_PANNEAU_SELECTION)
+                            y_textes_ressource_en_tout_centre = int(y_textes_ressource_en_tout_centre +
+                                                                    (y + hauteur - MARGE_PANNEAU_SELECTION -
+                                                                     y_textes_ressource_en_tout_centre) / 2)
 
-                        affiche_texte(TEXTE_PANNEAU_SELECTION_EN_TOUT, x_textes_ressource_en_tout,
-                                      int(y_textes_ressource_en_tout_centre -
-                                          1.5 * ECART_TEXTE_PANNEAU_SELECTION_RESSOURCE_EN_TOUT),
-                                      self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION),
-                                      couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
-                                      y_0haut_1centre_2bas=1)
-                        x_textes_ressource = x_textes_ressource_en_tout - MARGE_PANNEAU_SELECTION
-                        for i, type_ressource in enumerate([TYPE_RESSOURCE_ARGENT, TYPE_RESSOURCE_MINERAI,
-                                                            TYPE_RESSOURCE_LIQUIDE]):
-                            y_i = int(y_textes_ressource_en_tout_centre +
-                                      (i - 0.5) * ECART_TEXTE_PANNEAU_SELECTION_RESSOURCE_EN_TOUT)
-                            nb = self.element_selectionne.dic_nb_ressources_transportees_en_tout[type_ressource]
-                            affiche_texte(str(nb), x_textes_ressource, y_i, self.ecran,
-                                          taille=int(TAILLE_TEXTE_PANNEAU_SELECTION),
-                                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, y_0haut_1centre_2bas=1)
-                            rayon = RAYON_RESSOURCE_PANNEAU_VIGNETTES
-                            draw_filled_circle(self.ecran, (x_textes_ressource - 2 * rayon, y_i - 1),
-                                               rayon, DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][type_ressource])
+                            affiche_texte(TEXTE_PANNEAU_SELECTION_EN_TOUT, x_textes_ressource_en_tout,
+                                          int(y_textes_ressource_en_tout_centre -
+                                              1.5 * ECART_TEXTE_PANNEAU_SELECTION_RESSOURCE_EN_TOUT),
+                                          self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION),
+                                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
+                                          y_0haut_1centre_2bas=1)
+                            x_textes_ressource = x_textes_ressource_en_tout - MARGE_PANNEAU_SELECTION
+                            for i, type_ressource in enumerate([TYPE_RESSOURCE_ARGENT, TYPE_RESSOURCE_MINERAI,
+                                                                TYPE_RESSOURCE_LIQUIDE]):
+                                y_i = int(y_textes_ressource_en_tout_centre +
+                                          (i - 0.5) * ECART_TEXTE_PANNEAU_SELECTION_RESSOURCE_EN_TOUT)
+                                nb = self.element_selectionne.dic_nb_ressources_transportees_en_tout[type_ressource]
+                                affiche_texte(str(nb), x_textes_ressource, y_i, self.ecran,
+                                              taille=int(TAILLE_TEXTE_PANNEAU_SELECTION),
+                                              couleur=COULEUR_COMPTENU_PANNEAU_SELECTION, y_0haut_1centre_2bas=1)
+                                rayon = RAYON_RESSOURCE_PANNEAU_VIGNETTES
+                                draw_filled_circle(self.ecran, (x_textes_ressource - 2 * rayon, y_i - 1),
+                                                   rayon, DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][type_ressource])
 
-                    if isinstance(self.element_selectionne, Soldat):
+                        if isinstance(self.element_selectionne, Soldat):
+                            affiche_cible = True
+                            self.liste_boutons_ecran.append(BoutonImage(x_bouton_stop,
+                                                                        y + hauteur - 2 * (cote_bouton_stop +
+                                                                                           MARGE_PANNEAU_SELECTION),
+                                                                        cote_bouton_stop, cote_bouton_stop,
+                                                                        TYPE_BOUTON_IMAGE_IMMOBILE))
+                    else:
+                        affiche_cible = True
+
+                    if affiche_cible:
                         largeur_vignette_cible = int(self.panneau_infos_selection_element_mobile.x_ecran -
                                                      self.x_ecran - x - 2 * MARGE_PANNEAU_SELECTION)
                         x_centre_cible = int(largeur_vignette_cible / 2 + x + MARGE_PANNEAU_SELECTION)
@@ -1190,23 +1232,19 @@ class PanneauSelection(PanneauClic):
                                                                 largeur_vignette_cible, largeur_vignette_cible)
                             self.liste_boutons_ecran.append(vignette_cible)
                         else:
-                            self.ecran.blit(ecran_illustration_vierge((largeur_vignette_cible, largeur_vignette_cible)),
+                            self.ecran.blit(ecran_illustration_vierge((largeur_vignette_cible,
+                                                                       largeur_vignette_cible)),
                                             (x + MARGE_PANNEAU_SELECTION, y_vignette_cible))
                         y_texte_en_tout = y_vignette_cible + largeur_vignette_cible + MARGE_PANNEAU_SELECTION * 0.5
                         affiche_texte(TEXTE_PANNEAU_SELECTION_EN_TOUT, x_centre_cible, y_texte_en_tout,
-                                      self.ecran, taille=TAILLE_TEXTE_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
-                                      couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
+                                      self.ecran, taille=TAILLE_TEXTE_PANNEAU_SELECTION,
+                                      x_0gauche_1centre_2droite=1, couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
                         affiche_texte(str(self.element_selectionne.tireur.nb_destructions) + ' ' +
                                       TEXTE_PANNEAU_SELECTION_NB_VICTIMES_SOLDAT, x_centre_cible,
-                                      y_texte_en_tout + MARGE_PANNEAU_SELECTION * 0.2 + TAILLE_TEXTE_PANNEAU_SELECTION,
-                                      self.ecran, taille=TAILLE_TEXTE_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
+                                      (y_texte_en_tout + MARGE_PANNEAU_SELECTION * 0.2 +
+                                       TAILLE_TEXTE_PANNEAU_SELECTION), self.ecran,
+                                      taille=TAILLE_TEXTE_PANNEAU_SELECTION, x_0gauche_1centre_2droite=1,
                                       couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
-
-                        self.liste_boutons_ecran.append(BoutonImage(x_bouton_stop,
-                                                                    y + hauteur - 2 * (cote_bouton_stop +
-                                                                                       MARGE_PANNEAU_SELECTION),
-                                                                    cote_bouton_stop, cote_bouton_stop,
-                                                                    TYPE_BOUTON_IMAGE_IMMOBILE))
 
                 if affiche_vie:
                     barre_vies = barre_avancement(DIMENTION_BARRES_VIE_PANNEAU_SELECTION,

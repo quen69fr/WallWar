@@ -28,6 +28,8 @@ class Partie:
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LCTRL or event.key == pygame.K_RCTRL:
                     self.controle_presse = False
+                elif event.key == KEY_TOUCHE_PAUSE:
+                    self.monde.gere_touche_pause_enfoncee()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == pygame.BUTTON_LEFT:
                     if self.monde.souris_sur_ecran(self.x_souris, self.y_souris):

@@ -25,6 +25,8 @@ class Monde:
         self.element_selectionne = None
         self.rect_clic_down_sur_carte = None
 
+        self.mode_pause = False
+
         self.init_carte()
 
         # Affichage
@@ -42,6 +44,11 @@ class Monde:
         for type_personne, x_carte, y_carte in LISTE_PERSONNE_INIT:
             self.cree_personne(type_personne, x_carte, y_carte)
 
+        self.cree_ennemi(350, 350, 500, 5, 100, 200, 20)  # TODO : temp
+
+    def change_mode_pause(self):
+        self.mode_pause = not self.mode_pause
+
     def get_element_fixe(self, i, j):
         for source in self.liste_sources:
             if source.case_dans_source(i, j):
@@ -55,9 +62,37 @@ class Monde:
         if isinstance(cible, Personne):
             self.remove_personne(cible)
         elif isinstance(cible, Ennemi):
-            pass
+            self.remove_ennemi(cible)
         elif isinstance(cible, Batiment):
             self.remove_batiement_constuit(cible)
+
+    # -------------------------------------------------
+    #                      Ennemis
+    # -------------------------------------------------
+    def cree_ennemi(self, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir):
+        self.add_ennemi(Ennemi(self.carte, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir))
+
+    def add_ennemi(self, ennemi: Ennemi):
+        self.liste_ennemis.append(ennemi)
+
+    def remove_ennemi(self, ennemi: Ennemi):
+        self.liste_ennemis.remove(ennemi)
+        if self.element_selectionne == ennemi:
+            self.element_selectionne = None
+        if ennemi.type_explosion is not None:
+            self.liste_explosions.append(Explosion(ennemi.type_explosion, ennemi.x_float, ennemi.y_float))
+        for pers in self.liste_personnes:
+            if isinstance(pers, Soldat):
+                if pers.cible == ennemi:
+                    pers.annule_cible()
+        for bat in self.liste_batiments_constuits:
+            if bat.peut_tirer:
+                if bat.tireur.cible == ennemi:
+                    bat.tireur.annule_cible()
+
+    def update_ennemis(self):
+        for ennemi in self.liste_ennemis:
+            ennemi.update()
 
     # -------------------------------------------------
     #                     Personnes
@@ -99,6 +134,9 @@ class Monde:
             if bat.peut_tirer:
                 if bat.tireur.cible == personne:
                     bat.tireur.annule_cible()
+        for enn in self.liste_ennemis:
+            if enn.cible == personne:
+                enn.annule_cible()
 
     def gere_transaction_a_effectuer(self, porteur: Porteur):
         if len(porteur.liste_transaction_a_effectuer) > 0:
@@ -135,7 +173,7 @@ class Monde:
                         if personne.cible.nb_vies <= 0:
                             self.remove_cible(personne.cible)
                             personne.tireur.nb_destructions += 1
-        self.gere_chevauchements_personnes()
+        self.gere_chevauchements_personnes_et_ennemis()
 
     def update_chemin_personnes(self):
         for personne in self.liste_personnes:
@@ -161,9 +199,9 @@ class Monde:
                 return
         soldat.new_objectif(x_carte_clic, y_carte_clic, alea=alea)
 
-    def gere_chevauchements_personnes(self):
-        for i, personne1 in enumerate(self.liste_personnes):
-            for personne2 in self.liste_personnes[i + 1:]:
+    def gere_chevauchements_personnes_et_ennemis(self):
+        for i, personne1 in enumerate(self.liste_personnes + self.liste_ennemis):
+            for personne2 in (self.liste_personnes + self.liste_ennemis)[i + 1:]:
                 # if personne1.objectif is None or personne2.objectif is None:
                 d_max = (personne1.rayon + personne2.rayon) * COEF_RAYONS_PERSONNES_CHEVAUCHEMENT
                 dx = personne2.x_float - personne1.x_float
@@ -247,10 +285,14 @@ class Monde:
             self.liste_explosions.append(Explosion(batiment.type_explosion, x, y))
         self.carte.clear_case(batiment.liste_cases_depos + batiment.liste_cases_relais +
                               batiment.liste_cases_pleines + batiment.liste_cases_regen)
-        for personne in self.liste_personnes:
-            if isinstance(personne, Soldat):
-                if personne.cible == batiment:
-                    personne.cible = None
+        for pers in self.liste_personnes:
+            if isinstance(pers, Soldat):
+                if pers.cible == batiment:
+                    pers.cible = None
+        for enn in self.liste_ennemis:
+            if enn.cible == batiment:
+                enn.cible = None
+        self.update_chemin_personnes()
 
     def update_batiemnt_amelioration(self):
         for batiment in self.liste_batiments_constuits:
@@ -313,6 +355,7 @@ class Monde:
                                   self.element_selectionne.liste_cases_regen)
             self.liste_batiments_en_cours_de_construction.remove(self.element_selectionne)
             self.element_selectionne = None
+            self.update_chemin_personnes()
 
     def update_tireur_batiment(self, batiement: Batiment):
         tireur = batiement.tireur
@@ -452,6 +495,11 @@ class Monde:
                         if batiment.clic(i_clic_abs, j_clic_abs):
                             self.element_selectionne = batiment
                             break
+                    if self.element_selectionne is None:
+                        for ennemi in self.liste_ennemis:
+                            if ennemi.clic(x_carte_clic, y_carte_clic):
+                                self.element_selectionne = ennemi
+                                break
         self.rect_clic_down_sur_carte = None
 
     def gere_clic_droit(self, x_souris: int, y_souris: int):
@@ -472,15 +520,20 @@ class Monde:
                 x_carte_clic, y_carte_clic = self.carte.xy_absolu_to_xy_carte(x_souris, y_souris)
                 self.element_selectionne.set_point_sortie_constructions(self.carte, x_carte_clic, y_carte_clic)
 
+    def gere_touche_pause_enfoncee(self):
+        self.change_mode_pause()
+
     def update(self):
         if self.carte.deplace():
             self.new_affichage_static = True
-        self.update_batiments_en_cours_de_construction()
-        self.update_batiments_constuits()
-        self.update_batiemnt_amelioration()
-        self.update_sources()
-        self.update_personnes()
-        self.update_explosions()
+        if not self.mode_pause:
+            self.update_batiments_en_cours_de_construction()
+            self.update_batiments_constuits()
+            self.update_batiemnt_amelioration()
+            self.update_sources()
+            self.update_ennemis()
+            self.update_personnes()
+            self.update_explosions()
 
     # -------------------------------------------------
     #                     Affichage
@@ -503,9 +556,12 @@ class Monde:
                 self.element_selectionne.affiche_selectionne(screen, self.carte)
             if isinstance(self.element_selectionne, ElementMobile):
                 self.element_selectionne.affiche_selectionne(screen)
-                self.element_selectionne.affiche_objectif(screen)
-                if isinstance(self.element_selectionne, Soldat):
+                if isinstance(self.element_selectionne, Ennemi):
                     self.element_selectionne.affiche_tireur(screen)
+                else:
+                    self.element_selectionne.affiche_objectif(screen)
+                    if isinstance(self.element_selectionne, Soldat):
+                        self.element_selectionne.affiche_tireur(screen)
 
     def update_affichage_complet(self):
         self.ecran_complet.blit(self.ecran_static, (0, 0))
@@ -522,6 +578,9 @@ class Monde:
 
         for personne in self.liste_personnes:
             personne.affiche(self.ecran_complet)
+
+        for ennemi in self.liste_ennemis:
+            ennemi.affiche(self.ecran_complet)
 
         for explosion in self.liste_explosions:
             explosion.affiche(self.ecran_complet, self.carte)
