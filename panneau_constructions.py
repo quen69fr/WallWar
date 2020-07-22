@@ -41,7 +41,7 @@ class PanneauConstructions(PanneauClic):
         largeur_vignettes_batiment = int(distance_vignettes_batiment - marge_vignettes_batiment)
         hauteur_vignettes_batiment = int((self.hauteur_ecran - marge_vignettes_batiment) /
                                          NB_VIGNETTES_PANNEAU_CONSTRUCTION_HAUTEUR) - marge_vignettes_batiment
-        for i, type_batiment in enumerate(LISTE_TYPES_BATIMENTS):
+        for i, type_batiment in enumerate(LISTE_TYPES_BATIMENTS_CONSTRUCTIBLE):
             y = int(marge_vignettes_batiment + (hauteur_vignettes_batiment + marge_vignettes_batiment)
                     * (i // NB_VIGNETTES_PANNEAU_CONSTRUCTION_LARGEUR))
             x = int((i % NB_VIGNETTES_PANNEAU_CONSTRUCTION_LARGEUR) * distance_vignettes_batiment

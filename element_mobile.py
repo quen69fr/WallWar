@@ -107,6 +107,16 @@ class ElementMobile(Element):
                 self._orientation = math.pi - math.atan(dy / dx)
         self.new_affichage = True
 
+    def oriente_vers_point_si_necessaire(self, x_obj, y_obj):
+        if self.new_affichage:
+            self.oriente_vers_point(x_obj, y_obj)
+        else:
+            ancienne_orientation = self._orientation
+            ancien_affichage = self.new_affichage
+            self.oriente_vers_point(x_obj, y_obj)
+            if not ancien_affichage and abs(ancienne_orientation - self._orientation) < 0.0001:
+                self.new_affichage = False
+
     def objectif_suivant(self):
         if len(self.chemin_liste_objectifs) == 0:
             self.objectif = None

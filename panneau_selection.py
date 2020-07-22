@@ -875,13 +875,14 @@ class PanneauInfosSelectionElementMobile(PanneauClic):
         self.ecran.blit(self.ecran_base, (0, 0))
         y = TAILLE_TEXTE_PANNEAU_SELECTION + MARGE_PANNEAU_SELECTION * 0.5
         y = y + (self.hauteur_ecran - y) / 2
-        dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
         if isinstance(self.element_selectionne, Ennemi):
             liste_params = LISTE_PARAM_PANNEAU_INFOS_ENNEMIS
         else:
             type_class_element_selec = \
                 Element.dic_elements[PARAM_F_PERSONNE_TYPE_CLASS][self.element_selectionne.type]
             liste_params = DIC_LISTE_PARAM_PANNEAU_INFOS_PERSONNES[type_class_element_selec]
+        dy = int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.15) if len(liste_params) > 6 else \
+            int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.3)
         y = int(y - dy * (len(liste_params) - 1) / 2)
         for param in liste_params:
             val = self.element_selectionne.get_value_param(param)
@@ -1130,13 +1131,16 @@ class PanneauSelection(PanneauClic):
                                 self.panneau_construction_amelioration_batiments = \
                                     PanneauConstructionAmeliorationBatiment(self.monde, self.element_selectionne)
                         else:
-                            if self.panneau_construction_amelioration_batiments is None:
-                                self.panneau_construction_amelioration_batiments = \
-                                    PanneauConstructionAmeliorationBatiment(self.monde, self.element_selectionne, True)
+                            if self.element_selectionne.type == TYPE_BATIMENT_ENNEMI:
+                                self.panneau_construction_amelioration_batiments = None
+                                # TODO : afficher les infos de la base ennemi !
+                            else:
+                                if self.panneau_construction_amelioration_batiments is None:
+                                    self.panneau_construction_amelioration_batiments = \
+                                        PanneauConstructionAmeliorationBatiment(self.monde, self.element_selectionne,
+                                                                                True)
 
                 elif isinstance(self.element_selectionne, ElementMobile):
-                    affiche_cible = False
-
                     if self.panneau_infos_selection_element_mobile is None:
                         y_panneau_selection_element_mobile = (y_barre_vie + hauteur_barre_vie
                                                               + MARGE_PANNEAU_SELECTION)
@@ -1207,16 +1211,13 @@ class PanneauSelection(PanneauClic):
                                                    rayon, DIC_RESSOURCE[PARAM_RESSOURCE_COULEUR][type_ressource])
 
                         if isinstance(self.element_selectionne, Soldat):
-                            affiche_cible = True
                             self.liste_boutons_ecran.append(BoutonImage(x_bouton_stop,
                                                                         y + hauteur - 2 * (cote_bouton_stop +
                                                                                            MARGE_PANNEAU_SELECTION),
                                                                         cote_bouton_stop, cote_bouton_stop,
                                                                         TYPE_BOUTON_IMAGE_IMMOBILE))
-                    else:
-                        affiche_cible = True
 
-                    if affiche_cible:
+                    if isinstance(self.element_selectionne, ElementMobileTireur):
                         largeur_vignette_cible = int(self.panneau_infos_selection_element_mobile.x_ecran -
                                                      self.x_ecran - x - 2 * MARGE_PANNEAU_SELECTION)
                         x_centre_cible = int(largeur_vignette_cible / 2 + x + MARGE_PANNEAU_SELECTION)

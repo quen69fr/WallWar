@@ -3,6 +3,22 @@
 from element import *
 
 
+def point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte, distance,
+                               return_distance=False):
+    dx = abs(x_cible_sur_carte - x_sur_carte)
+    if dx > distance:
+        return False
+    dy = abs(y_cible_sur_carte - y_sur_carte)
+    if dy > distance:
+        return False
+    d2 = dx ** 2 + dy ** 2
+    if d2 > distance ** 2:
+        return False
+    if return_distance:
+        return math.sqrt(distance)
+    return True
+
+
 class Tireur:
     dic_liste_cases_relatives_porter_tir = {}
 
@@ -19,7 +35,12 @@ class Tireur:
                 self.peut_tirer = True
 
     def point_a_porter_de_tir(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte):
-        return (x_cible_sur_carte - x_sur_carte) ** 2 + (y_cible_sur_carte - y_sur_carte) ** 2 <= self.portee_tir ** 2
+        return point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
+                                          self.portee_tir)
+
+    def point_visible(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte):
+        return point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
+                                          self.portee_vision)
 
     def tir(self):
         self.delay_dernier_tir = 0
@@ -29,6 +50,7 @@ class Tireur:
         x_relatif, y_relatif = carte.xy_carte_to_xy_relatif(x_centre_sur_carte, y_centre_sur_carte)
         rayon = int(self.portee_tir * carte.coef_zoom)
         couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION
+        draw_filled_circle(screen, (x_relatif, y_relatif), int(self.portee_vision * carte.coef_zoom), couleur)
         draw_filled_circle(screen, (x_relatif, y_relatif), rayon, couleur)
         if len(couleur) == 2:
             couleur = COULEUR_PORTER_TIR_TIREUR_SELECTION[0]
@@ -64,6 +86,10 @@ class Tireur:
     @property
     def portee_tir(self):
         return Element.dic_elements[PARAM_A_TIREUR_PORTEE_TIR][self.type_element]
+
+    @property
+    def portee_vision(self):
+        return Element.dic_elements[PARAM_A_TIREUR_PORTEE_VISION][self.type_element]
 
     @property
     def delay_tir(self):
