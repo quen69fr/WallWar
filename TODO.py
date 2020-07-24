@@ -6,6 +6,7 @@
 #          x Créer l'intelligence
 #          x L'afficher (panneau sélection)
 #          x Créer des améliorations
+#          . Optimiser/refaire intelligence
 #     -  Faire de la "reproduction" entre les ennemis
 #  o  AFFICHAGE :
 #     -  Faire des boutons (menu ??) et des raccourcis clavié paur les actions :

@@ -2,17 +2,19 @@
 
 from batiment import *
 from element_mobile import *
+from tireur_ennemi import *
 from tireur import *
 
 
 class ElementMobileTireur(ElementMobile):
-    def __init__(self, type_pers, carte: Carte, x_sur_carte: int, y_sur_carte: int, tireur: Tireur,
-                 objectif: (int, int) = None, orientation=0, alea=0):
+    def __init__(self, type_pers, carte: Carte, x_sur_carte: int, y_sur_carte: int, tireur: Tireur or TireurEnnemi,
+                 choix_mouvement: bool, objectif: (int, int) = None, orientation=0, alea=0):
         self.cible: ElementMobile or Batiment or None = None
         self.tireur = tireur
         self.ij_cible = 0, 0
         self.immobile = False
-        ElementMobile.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
+        ElementMobile.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, choix_mouvement,
+                               objectif, orientation, alea)
         self.niveau_d_intelligence_actuel = self.niveau_d_intelligence
 
     def update_chemin_et_position(self):
@@ -122,10 +124,13 @@ class ElementMobileTireur(ElementMobile):
     def find_tireur_sur_self(self, liste_adversaires_mobiles: list, liste_adversaires_statiques: list):
         liste_tireur_sur_self = []
         for element_mobile in liste_adversaires_mobiles:
-            if isinstance(element_mobile, ElementMobileTireur) and element_mobile.cible == self:
+            if isinstance(element_mobile, ElementMobileTireur) and element_mobile.cible == self and \
+                    element_mobile.cible_a_porter_de_tir(self):
                 liste_tireur_sur_self.append(element_mobile)
         for batiment in liste_adversaires_statiques:
-            if batiment.peut_tirer and batiment.tireur.cible == self:
+            if batiment.peut_tirer and batiment.tireur.cible == self \
+                    and batiment.tireur.point_a_porter_de_tir(batiment.tireur.x, batiment.tireur.y,
+                                                              self.x_sur_carte, self.y_sur_carte):
                 liste_tireur_sur_self.append(batiment)
         return liste_tireur_sur_self
 
@@ -173,8 +178,11 @@ class ElementMobileTireur(ElementMobile):
             else:
                 self.cible = random.choice(liste_tireur_sur_self)
         else:
-            if not (isinstance(self.cible, ElementMobileTireur) and self.cible.cible == self) and not \
-                    (isinstance(self.cible, Batiment) and self.cible.peut_tirer and self.cible.tireur.cible == self):
+            if not (isinstance(self.cible, ElementMobileTireur) and self.cible.cible == self and
+                    self.cible.cible_a_porter_de_tir(self)) and not \
+                    (isinstance(self.cible, Batiment) and self.cible.peut_tirer and self.cible.tireur.cible == self
+                     and self.cible.tireur.point_a_porter_de_tir(self.cible.tireur.x, self.cible.tireur.y,
+                                                                 self.x_sur_carte, self.y_sur_carte)):
                 liste_tireur_sur_self = self.find_tireur_sur_self(liste_adversaires_mobiles,
                                                                   liste_adversaires_statiques)
                 if self.immobile:
@@ -191,8 +199,11 @@ class ElementMobileTireur(ElementMobile):
     def update_cible_niv_4(self, liste_adversaires_mobiles: list, liste_adversaires_statiques: list):
         if self.immobile and (self.cible is None or not self.cible_a_porter_de_tir(self.cible)):
             self.cible = None
-        if not (isinstance(self.cible, ElementMobileTireur) and self.cible.cible == self) and not \
-                (isinstance(self.cible, Batiment) and self.cible.peut_tirer and self.cible.tireur.cible == self):
+        if not (isinstance(self.cible, ElementMobileTireur) and self.cible.cible == self and
+                self.cible.cible_a_porter_de_tir(self)) and not \
+                (isinstance(self.cible, Batiment) and self.cible.peut_tirer and self.cible.tireur.cible == self and
+                 self.cible.tireur.point_a_porter_de_tir(self.cible.tireur.x, self.cible.tireur.y,
+                                                         self.x_sur_carte, self.y_sur_carte)):
             liste_tireur_sur_self = self.find_tireur_sur_self(liste_adversaires_mobiles, liste_adversaires_statiques)
             if self.immobile:
                 liste = liste_tireur_sur_self[:]
@@ -281,15 +292,19 @@ class ElementMobileTireur(ElementMobile):
                         rate = rate_adversaire_niv_intelligence_max(dist_relative, adversaire.nb_vies,
                                                                     (adversaire.tireur.force_tir /
                                                                      adversaire.tireur.delay_tir),
-                                                                    True, adversaire.cible == self)
+                                                                    True, (adversaire.cible == self and
+                                                                           adversaire.cible_a_porter_de_tir(self)))
                     else:
                         rate = rate_adversaire_niv_intelligence_max(dist_relative, adversaire.nb_vies, 0, False, False)
                 if isinstance(adversaire, Batiment):
                     if adversaire.peut_tirer:
+                        tir_sur_self = adversaire.tireur.cible == self and \
+                                       adversaire.tireur.point_a_porter_de_tir(adversaire.tireur.x, adversaire.tireur.y,
+                                                                               self.x_sur_carte, self.y_sur_carte)
                         rate = rate_adversaire_niv_intelligence_max(dist_relative, adversaire.nb_vies,
                                                                     (adversaire.tireur.force_tir /
                                                                      adversaire.tireur.delay_tir),
-                                                                    True, adversaire.tireur.cible == self)
+                                                                    True, tir_sur_self)
                     else:
                         rate = rate_adversaire_niv_intelligence_max(dist_relative, adversaire.nb_vies, 0, False, False)
                 liste_adversaires_potentiels.append((adversaire, rate))

@@ -82,9 +82,9 @@ class Monde:
     #                      Ennemis
     # -------------------------------------------------
     def cree_ennemi(self, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir, portee_vision,
-                    num_base_ennemi: int):
+                    niv_intelligence, num_base_ennemi: int):
         self.add_ennemi(Ennemi(self.carte, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir,
-                               portee_vision, num_base_ennemi))
+                               portee_vision, num_base_ennemi, niv_intelligence, alea=ALEA_MAX_CREATION_ENNEMI))
 
     def add_ennemi(self, ennemi: Ennemi):
         self.liste_ennemis.append(ennemi)
@@ -122,8 +122,8 @@ class Monde:
                         ennemi.vague_suivante()
                 for liste_params_ennemi in listes_params_ennemis:
                     x, y = self.liste_bases_ennemis[num_base_ennemi].get_pos_autour()
-                    p1, p2, p3, p4, p5, p6 = liste_params_ennemi
-                    self.cree_ennemi(x, y, p1, p2, p3, p4, p5, p6, num_base_ennemi)
+                    p1, p2, p3, p4, p5, p6, p7 = liste_params_ennemi
+                    self.cree_ennemi(x, y, p1, p2, p3, p4, p5, p6, p7, num_base_ennemi)
             self.vagues_ennemis.liste_vagues_a_rajouter = []
 
     # -------------------------------------------------

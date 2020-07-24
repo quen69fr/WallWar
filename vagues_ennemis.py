@@ -5,13 +5,16 @@ from carte import *
 
 def get_valeur_param_ennemi(param, nb_entree):
     if param == PARAM_A_TIREUR_DELAY_TIR:
-        return round(DIC_ENNEMIS[param][VALEUR_MIN] * DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN] /
-                     (DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MAX] -
-                     DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN]) /
-                     DIC_ENNEMIS[param][ENTREE_MAX] * nb_entree + DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN], 1)
+        return round(DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN] * DIC_ENNEMIS[param][VALEUR_MIN] /
+                     ((DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MAX] -
+                       DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN]) / DIC_ENNEMIS[param][ENTREE_MAX] *
+                      nb_entree + DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN]), 1)
     else:
-        return round((DIC_ENNEMIS[param][VALEUR_MAX] - DIC_ENNEMIS[param][VALEUR_MIN]) / DIC_ENNEMIS[param][ENTREE_MAX]
-                     * nb_entree + DIC_ENNEMIS[param][VALEUR_MIN], 1)
+        value = round((DIC_ENNEMIS[param][VALEUR_MAX] - DIC_ENNEMIS[param][VALEUR_MIN]) / DIC_ENNEMIS[param][ENTREE_MAX]
+                      * nb_entree + DIC_ENNEMIS[param][VALEUR_MIN], 1)
+        if param == PARAM_A_TIREUR_INTELLIGENCE:
+            return int(value)
+        return value
 
 
 def get_listes_valeurs_params_ennemi_aleatoire(nb_entrees_max):
@@ -25,7 +28,10 @@ def get_listes_valeurs_params_ennemi_aleatoire(nb_entrees_max):
             if dic_distribution_param[key] < DIC_ENNEMIS[key][ENTREE_MAX]:
                 dic_distribution_param[key] += 1
                 ok = True
-    return [get_valeur_param_ennemi(key, dic_distribution_param[key]) for key in LISTE_PARAMS_ENNEMIS]
+    liste = [get_valeur_param_ennemi(key, dic_distribution_param[key]) for key in LISTE_PARAMS_ENNEMIS]
+    liste[LISTE_PARAMS_ENNEMIS.index(PARAM_A_TIREUR_PORTEE_VISION)] += \
+        liste[LISTE_PARAMS_ENNEMIS.index(PARAM_A_TIREUR_PORTEE_TIR)]
+    return liste
 
 
 class VaguesEnnemis:

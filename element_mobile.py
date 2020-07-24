@@ -17,6 +17,10 @@ class ElementMobile(Element):
         self.ecran = pygame.transform.rotozoom(self.ecran_original, 0, self.scale_ecran_original_zoom)
         self.ecran_size = (self.ecran.get_width(), self.ecran.get_height())
 
+        if not objectif:
+            new_x, new_y = self.carte.ajoute_aleas_xy_carte(x_sur_carte, y_sur_carte, alea)
+            new_i, new_j = self.carte.xy_carte_to_ij_case(new_x, new_y)
+            x_sur_carte, y_sur_carte = self.ajuste_xy_objectif(new_x, new_y, new_i, new_j)
         self.x_sur_carte = x_sur_carte
         self.y_sur_carte = y_sur_carte
         self.x_float = x_sur_carte

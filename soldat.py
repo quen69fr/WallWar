@@ -8,7 +8,7 @@ class Soldat(Personne, ElementMobileTireur):
     def __init__(self, type_pers, carte: Carte, x_sur_carte: int, y_sur_carte: int, objectif: (int, int) = None,
                  orientation=0, alea=0):
         ElementMobileTireur.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, Tireur(type_pers),
-                                     objectif, orientation, alea)
+                                     True, objectif, orientation, alea)
         Personne.__init__(self, type_pers, carte, x_sur_carte, y_sur_carte, objectif, orientation, alea)
 
     def new_objectif(self, x_carte, y_carte, i_pos: int = None, j_pos: int = None, i_objectif: int = None,
