@@ -1,21 +1,24 @@
 # coding: utf-8
 
 from element_mobile_tireur import *
+from paramsEnnemi import *
 
 
 class Ennemi(ElementMobileTireur):
-    def __init__(self, carte: Carte, x_sur_carte: int, y_sur_carte: int, nb_vies, vitesse, force_tir, portee_tir,
-                 delay_tir, portee_vision, num_base_ennemi, niveau_d_intelligence, alea=0):
+    def __init__(self, carte: Carte, x_sur_carte: int, y_sur_carte: int, params: ParamTireurEnnemi,
+                 num_base_ennemi: int, alea=0):
+        self.params = params
         ElementMobileTireur.__init__(self, TYPE_ENNEMI, carte, x_sur_carte, y_sur_carte,
-                                     TireurEnnemi(force_tir, portee_tir, delay_tir, portee_vision), False, alea=alea)
+                                     TireurEnnemi(self.params.force_tir, self.params.portee_tir,
+                                                  self.params.delay_tir, self.params.portee_vision), False, alea=alea)
         self.num_base_ennemi = num_base_ennemi
-        self._nb_vies_max = nb_vies
-        self._vitesse_deplacement = vitesse
-        self._niveau_d_intelligence = niveau_d_intelligence
+        self._nb_vies_max = self.params.vie
+        self._vitesse_deplacement = self.params.vitesse_deplacement
+        self._niveau_d_intelligence = self.params.intelligence
         self.offencif = False
         self.num_vague = 0
         self.type_vague = LISTE_VAGUES_ENNEMIS[self.num_vague]
-        self.niveau_d_intelligence_actuel = niveau_d_intelligence
+        self.niveau_d_intelligence_actuel = self.params.intelligence
         self.update_new_type_vague()
 
     def tir_si_possible(self):
@@ -46,26 +49,21 @@ class Ennemi(ElementMobileTireur):
             self.immobile = False
             self.offencif = True
 
-    def mort_cible(self):
+    def annule_cible(self):
         self.cible = None
+        self.objectif = None
+        self.chemin_liste_objectifs = []
 
-    def find_cible_base(self, liste_batiments):
-        liste_bases = []
-        for batiment in liste_batiments:
-            if batiment.type == TYPE_BATIMENT_BASE:
-                liste_bases.append(batiment)
-        if len(liste_bases) > 0:
-            if len(liste_bases) == 1:
-                return liste_bases[0]
-            else:
-                i, j = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
-                return min(liste_bases, key=lambda bat: (bat.i - i) ** 2 + (bat.j - j) ** 2)
+    def find_cible_static_plus_proche(self, liste_batiments):
+        if len(liste_batiments) > 0:
+            i, j = self.carte.xy_carte_to_ij_case(self.x_sur_carte, self.y_sur_carte)
+            return min(liste_batiments, key=lambda bat: (bat.i - i) ** 2 + (bat.j - j) ** 2)
         return None
 
     def update_cible(self, liste_adversaires_mobiles: list, liste_adversaires_statiques: list):
         ElementMobileTireur.update_cible(self, liste_adversaires_mobiles, liste_adversaires_statiques)
         if self.cible is None and self.offencif:
-            self.cible = self.find_cible_base(liste_adversaires_statiques)
+            self.cible = self.find_cible_static_plus_proche(liste_adversaires_statiques)
 
     def get_value_param(self, param):
         if param == PARAM_A_VIES:
@@ -92,3 +90,6 @@ class Ennemi(ElementMobileTireur):
 
     def niveau_d_intelligence(self):
         return self._niveau_d_intelligence
+
+    def cible_visible_ext(self):
+        return False

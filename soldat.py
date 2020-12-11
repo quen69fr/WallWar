@@ -41,10 +41,10 @@ class Soldat(Personne, ElementMobileTireur):
             return True
         return False
 
-    def update_tireur(self, liste_adversaires_mobiles: list, liste_adversaires_statiques: list):
+    def update_tireur(self):
         if self.objectif is None and self.cible is None:
             self.niveau_d_intelligence_actuel = self.niveau_d_intelligence
-        ElementMobileTireur.update_tireur(self, liste_adversaires_mobiles, liste_adversaires_statiques)
+        ElementMobileTireur.update_tireur(self)
 
     def affiche_objectif(self, screen: pygame.Surface):
         if self.cible is not None:

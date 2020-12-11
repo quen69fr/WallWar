@@ -4,7 +4,7 @@ from element import *
 
 
 def point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte, distance,
-                               return_distance=False):
+                               return_distance=False, return_distance_au_carre=False):
     dx = abs(x_cible_sur_carte - x_sur_carte)
     if dx > distance:
         return False
@@ -15,7 +15,9 @@ def point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_ci
     if d2 > distance ** 2:
         return False
     if return_distance:
-        return math.sqrt(distance)
+        return math.sqrt(d2)
+    if return_distance_au_carre:
+        return d2
     return True
 
 
@@ -34,13 +36,15 @@ class Tireur:
             if self.delay_dernier_tir >= self.delay_tir:
                 self.peut_tirer = True
 
-    def point_a_porter_de_tir(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte):
+    def point_a_porter_de_tir(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
+                              retourne_distance_au_carre=False):
         return point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
-                                          self.portee_tir)
+                                          self.portee_tir, return_distance_au_carre=retourne_distance_au_carre)
 
-    def point_visible(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte):
+    def point_visible(self, x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
+                      retourne_distance_au_carre=False):
         return point_a_porter_de_distance(x_sur_carte, y_sur_carte, x_cible_sur_carte, y_cible_sur_carte,
-                                          self.portee_vision)
+                                          self.portee_vision, return_distance_au_carre=retourne_distance_au_carre)
 
     def tir(self):
         self.delay_dernier_tir = 0

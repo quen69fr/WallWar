@@ -8,6 +8,7 @@ from source import *
 from explosion import *
 from base_ennemi import *
 from batiment import *
+from threading import Thread
 
 
 class Monde:
@@ -28,6 +29,7 @@ class Monde:
 
         self.element_selectionne = None
         self.rect_clic_down_sur_carte = None
+        self.thread_gere_cibles_actif = False
 
         self.mode_pause = False
 
@@ -54,8 +56,12 @@ class Monde:
 
         self.vagues_ennemis = VaguesEnnemis(len(self.liste_bases_ennemis))
 
+        self.lance_thread_gere_cibles()
+
     def change_mode_pause(self):
         self.mode_pause = not self.mode_pause
+        if not self.mode_pause:
+            self.lance_thread_gere_cibles()
 
     def get_element_fixe(self, i, j):
         for source in self.liste_sources:
@@ -76,15 +82,13 @@ class Monde:
             if isinstance(cible, BaseEnnemi):
                 self.remove_base_ennemi(cible)
             else:
-                self.remove_batiement_constuit(cible)
+                self.remove_batiement(cible)
 
     # -------------------------------------------------
     #                      Ennemis
     # -------------------------------------------------
-    def cree_ennemi(self, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir, portee_vision,
-                    niv_intelligence, num_base_ennemi: int):
-        self.add_ennemi(Ennemi(self.carte, x_carte, y_carte, nb_vies, vitesse, force_tir, portee_tir, delay_tir,
-                               portee_vision, num_base_ennemi, niv_intelligence, alea=ALEA_MAX_CREATION_ENNEMI))
+    def cree_ennemi(self, x_carte, y_carte, params: ParamTireurEnnemi, num_base_ennemi: int):
+        self.add_ennemi(Ennemi(self.carte, x_carte, y_carte, params, num_base_ennemi, alea=ALEA_MAX_CREATION_ENNEMI))
 
     def add_ennemi(self, ennemi: Ennemi):
         self.liste_ennemis.append(ennemi)
@@ -103,10 +107,11 @@ class Monde:
             if bat.peut_tirer:
                 if bat.tireur.cible == ennemi:
                     bat.tireur.annule_cible()
+        self.vagues_ennemis.new_ennemi_stat(ennemi.tireur.rate_degas_destructions(), ennemi.params)
 
     def update_ennemis(self):
         for ennemi in self.liste_ennemis:
-            ennemi.update_tireur(self.liste_personnes, self.liste_batiments_constuits)
+            ennemi.update_tireur()
             if ennemi.cible is not None and ennemi.tir_si_possible():
                 self.cree_explosion_tir(ennemi)
                 if ennemi.cible.nb_vies <= 0:
@@ -120,10 +125,9 @@ class Monde:
                 for ennemi in self.liste_ennemis:
                     if ennemi.num_base_ennemi == num_base_ennemi:
                         ennemi.vague_suivante()
-                for liste_params_ennemi in listes_params_ennemis:
+                for params_ennemis in listes_params_ennemis:
                     x, y = self.liste_bases_ennemis[num_base_ennemi].get_pos_autour()
-                    p1, p2, p3, p4, p5, p6, p7 = liste_params_ennemi
-                    self.cree_ennemi(x, y, p1, p2, p3, p4, p5, p6, p7, num_base_ennemi)
+                    self.cree_ennemi(x, y, params_ennemis, num_base_ennemi)
             self.vagues_ennemis.liste_vagues_a_rajouter = []
 
     # -------------------------------------------------
@@ -168,7 +172,7 @@ class Monde:
                     bat.tireur.annule_cible()
         for enn in self.liste_ennemis:
             if enn.cible == personne:
-                enn.mort_cible()
+                enn.annule_cible()
 
     def gere_transaction_a_effectuer(self, porteur: Porteur):
         if len(porteur.liste_transaction_a_effectuer) > 0:
@@ -181,7 +185,7 @@ class Monde:
     def update_personnes(self):
         for personne in self.liste_personnes:
             if isinstance(personne, Soldat):
-                personne.update_tireur(self.liste_ennemis, self.liste_bases_ennemis)
+                personne.update_tireur()
                 if personne.tir_si_possible():
                     self.cree_explosion_tir(personne)
                     if personne.cible.nb_vies <= 0:
@@ -197,7 +201,6 @@ class Monde:
                     for batiment in self.liste_batiments_constuits:
                         if (i_personne, j_personne) in batiment.liste_cases_regen:
                             personne.add_vies(batiment.nb_vies_regen * COEF_VITESSE_RECHAGRE_VIES)
-        self.gere_chevauchements_personnes_et_ennemis()
 
     def update_chemin_personnes(self):
         for personne in self.liste_personnes:
@@ -209,7 +212,7 @@ class Monde:
 
     def gere_new_objectif_cible_soldat(self, soldat: Soldat, x_carte_clic: int, y_carte_clic: int, alea=0):
         for ennemi in self.liste_ennemis:
-            if ennemi.clic(x_carte_clic, y_carte_clic):
+            if ennemi.clic(x_carte_clic, y_carte_clic) and soldat.cible_a_porter_de_distance_max(ennemi):
                 soldat.new_cible_obligatoire(ennemi)
                 return
         for batiment in self.liste_bases_ennemis + self.liste_batiments_constuits:
@@ -217,11 +220,17 @@ class Monde:
             if (i_clic, j_clic) in batiment.liste_cases_pleines:
                 soldat.new_cible_obligatoire(batiment)
                 return
-        for personne in self.liste_personnes:
-            if not personne == soldat and personne.clic(x_carte_clic, y_carte_clic):
-                soldat.new_cible_obligatoire(personne)
-                return
+        # On ne peut pas se tirer dssus :
+        # for personne in self.liste_personnes:
+        #     if not personne == soldat and personne.clic(x_carte_clic, y_carte_clic):
+        #         soldat.new_cible_obligatoire(personne)
+        #         return
         soldat.new_objectif(x_carte_clic, y_carte_clic, alea=alea)
+
+    def update_personnes_et_ennemis(self):
+        self.gere_chevauchements_personnes_et_ennemis()
+        self.update_personnes()
+        self.update_ennemis()
 
     def gere_chevauchements_personnes_et_ennemis(self):
         for i, personne1 in enumerate(self.liste_personnes + self.liste_ennemis):
@@ -234,10 +243,9 @@ class Monde:
                     if abs(dy) < d_max:
                         d2 = dx ** 2 + dy ** 2
                         if d2 < d_max ** 2:
-                            dist = math.sqrt(d2)
-                            if not dist == 0:
+                            if not d2 == 0:
                                 somme_masses = personne1.masse_relative + personne2.masse_relative
-                                coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / dist
+                                coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / math.sqrt(d2)
                                 for personne in [personne2, personne1]:
                                     personne.new_choc()
                                     coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
@@ -257,6 +265,32 @@ class Monde:
                                         else:
                                             x, y = personne.objectif
                                             personne.oriente_vers_point(x, y)
+
+    def lance_thread_gere_cibles(self):
+        if not self.thread_gere_cibles_actif:
+            thread = Thread(target=self.thread_gere_cibles)
+            self.thread_gere_cibles_actif = True
+            thread.start()
+
+    def thread_gere_cibles(self):
+        while not self.mode_pause and self.thread_gere_cibles_actif:
+            for personne in self.liste_personnes:
+                if isinstance(personne, Soldat):
+                    personne.update_cible(self.liste_ennemis, self.liste_bases_ennemis)
+            for ennemi in self.liste_ennemis:
+                ennemi.update_cible(self.liste_personnes,
+                                    self.liste_batiments_constuits + self.liste_batiments_en_cours_de_construction)
+            for batiment in self.liste_batiments_constuits:
+                if batiment.peut_tirer:
+                    tireur = batiment.tireur
+                    if tireur is not None and tireur.cible is None:
+                        for ennemi in self.liste_ennemis:
+                            if tireur.point_a_porter_de_tir(tireur.x, tireur.y, ennemi.x_float, ennemi.y_float):
+                                tireur.new_cible(ennemi)
+                                break
+
+            pygame.time.Clock().tick(FPS_UPDATE_CIBLES_TIREUR)
+        self.thread_gere_cibles_actif = False
 
     # -------------------------------------------------
     #                      Sources
@@ -300,12 +334,16 @@ class Monde:
                 self.carte.add_cases_relais_batiment(batiment.liste_cases_relais)
                 self.new_affichage_static = True
 
-    def remove_batiement_constuit(self, batiment: Batiment):
-        self.liste_batiments_constuits.remove(batiment)
+    def remove_batiement(self, batiment: Batiment):
+        if batiment in self.liste_batiments_en_cours_de_construction:
+            self.liste_batiments_en_cours_de_construction.remove(batiment)
+        else:
+            self.liste_batiments_constuits.remove(batiment)
         self.action_remove_batiment(batiment)
 
     def remove_base_ennemi(self, batiment: Batiment):
         self.liste_bases_ennemis.remove(batiment)
+        self.vagues_ennemis.nb_bases_ennemis -= 1
         self.action_remove_batiment(batiment)
 
     def action_remove_batiment(self, batiment: Batiment):
@@ -398,12 +436,6 @@ class Monde:
     def update_tireur_batiment(self, batiement: Batiment):
         tireur = batiement.tireur
         if tireur is not None:
-            if tireur.cible is None:
-                for ennemi in self.liste_ennemis:
-                    if tireur.point_a_porter_de_tir(tireur.x, tireur.y, ennemi.x_float, ennemi.y_float):
-                        tireur.new_cible(ennemi)
-                        return
-
             if tireur.update_general(self.carte):
                 self.cree_explosion_tir(batiement)
                 if tireur.cible.nb_vies <= 0:
@@ -571,8 +603,7 @@ class Monde:
             self.update_batiemnt_amelioration()
             self.update_sources()
             self.update_vagues_ennemis()
-            self.update_ennemis()
-            self.update_personnes()
+            self.update_personnes_et_ennemis()
             self.update_explosions()
 
     # -------------------------------------------------

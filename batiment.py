@@ -339,6 +339,13 @@ class Batiment(Element):
             self._tireur.affiche_selectionne(screen, carte)
 
     @property
+    def nb_vies(self):
+        if self.etape_construction < self.etape_construction_max:
+            return 1 - self.nb_vies_malus
+        else:
+            return self.nb_vies_max - self.nb_vies_malus
+
+    @property
     def liste_cases_pleines_relatives(self):
         return Element.dic_elements[PARAM_F_BATIMENT_LISTE_CASES][self.type][TYPE_CASE_PLEINE]
 

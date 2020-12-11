@@ -1,66 +1,70 @@
 # coding: utf-8
 
-from carte import *
-
-
-def get_valeur_param_ennemi(param, nb_entree):
-    if param == PARAM_A_TIREUR_DELAY_TIR:
-        return round(DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN] * DIC_ENNEMIS[param][VALEUR_MIN] /
-                     ((DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MAX] -
-                       DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN]) / DIC_ENNEMIS[param][ENTREE_MAX] *
-                      nb_entree + DIC_ENNEMIS[PARAM_A_TIREUR_FORCE_TIR][VALEUR_MIN]), 1)
-    else:
-        value = round((DIC_ENNEMIS[param][VALEUR_MAX] - DIC_ENNEMIS[param][VALEUR_MIN]) / DIC_ENNEMIS[param][ENTREE_MAX]
-                      * nb_entree + DIC_ENNEMIS[param][VALEUR_MIN], 1)
-        if param == PARAM_A_TIREUR_INTELLIGENCE:
-            return int(value)
-        return value
-
-
-def get_listes_valeurs_params_ennemi_aleatoire(nb_entrees_max):
-    dic_distribution_param = {}
-    for param in LISTE_PARAMS_ENNEMIS:
-        dic_distribution_param[param] = 0
-    for _ in range(nb_entrees_max):
-        ok = False
-        while not ok:
-            key = LISTE_PARAMS_ENNEMIS[random.randint(0, len(LISTE_PARAMS_ENNEMIS) - 1)]
-            if dic_distribution_param[key] < DIC_ENNEMIS[key][ENTREE_MAX]:
-                dic_distribution_param[key] += 1
-                ok = True
-    liste = [get_valeur_param_ennemi(key, dic_distribution_param[key]) for key in LISTE_PARAMS_ENNEMIS]
-    liste[LISTE_PARAMS_ENNEMIS.index(PARAM_A_TIREUR_PORTEE_VISION)] += \
-        liste[LISTE_PARAMS_ENNEMIS.index(PARAM_A_TIREUR_PORTEE_TIR)]
-    return liste
+from paramsEnnemi import *
 
 
 class VaguesEnnemis:
     def __init__(self, nb_bases_ennemis):
         self.num_vague = 0
         self.delay_vague_suivante = DELAY_ENTRE_VAGUES
-        self.delay_actuel = 0
-        self.nb_ennemi_par_vague = NB_ENNEMIS_PAR_VAGUE
+        self.nb_entrees_sup_par_vague = NB_ENTREES_SUP_PAR_VAGUES
         self.nb_bases_ennemis = nb_bases_ennemis
-        self.nb_entrees_max = NB_ENTREES_MAX
         self.liste_vagues_a_rajouter = []
+        self.stats_ennemis_morts = []
         self.init_liste_ennemis_a_rajouter()
 
     def init_liste_ennemis_a_rajouter(self):
         for _ in range(NB_VAGUES_ENNEMIS_INIT):
+            nb_entrees = NB_ENTREES_MAX_INIT + self.num_vague * NB_ENTREES_SUP_PAR_VAGUES
+            self.num_vague += 1
             for i in range(self.nb_bases_ennemis):
                 liste_pararms_ennemis = []
-                for _ in range(self.nb_ennemi_par_vague):
-                    liste_pararms_ennemis.append(get_listes_valeurs_params_ennemi_aleatoire(self.nb_entrees_max))
+                for _ in range(random.choice(NB_ENNEMIS_PAR_VAGUE_LISTE)):
+                    liste_pararms_ennemis.append(ParamTireurEnnemi(nb_entrees))
                 self.liste_vagues_a_rajouter.append((i, liste_pararms_ennemis))
 
     def new_vague(self):
+        self.num_vague += 1
+        if not self.nb_entrees_sup_par_vague == 0 and self.num_vague > NB_VAGUE_AVEC_SUP:
+            self.nb_entrees_sup_par_vague = 0
         liste_pararms_ennemis = []
-        for _ in range(self.nb_ennemi_par_vague):
-            liste_pararms_ennemis.append(get_listes_valeurs_params_ennemi_aleatoire(self.nb_entrees_max))
+        if len(self.stats_ennemis_morts) < 2:
+            if self.nb_entrees_sup_par_vague == 0:
+                nb_entrees = NB_ENTREES_MAX_INIT + NB_ENTREES_SUP_PAR_VAGUES * NB_VAGUE_AVEC_SUP
+            else:
+                nb_entrees = NB_ENTREES_MAX_INIT + (self.num_vague - 1) * NB_ENTREES_SUP_PAR_VAGUES
+            for _ in range(random.choice(NB_ENNEMIS_PAR_VAGUE_LISTE)):
+                liste_pararms_ennemis.append(ParamTireurEnnemi(nb_entrees))
+        else:
+            nb_ennemi_par_vague = random.choice(NB_ENNEMIS_PAR_VAGUE_LISTE)
+            nb_deuxieme = nb_ennemi_par_vague // 2
+            nb_premier = nb_ennemi_par_vague - nb_deuxieme
+            nb_troisieme = 0
+            if len(self.liste_vagues_a_rajouter) > 2:
+                nb_troisieme = nb_deuxieme // 3
+                nb_deuxieme -= nb_troisieme
+
+            self.stats_ennemis_morts.sort(key=lambda ennemi: ennemi[0])
+            for i in [0] * nb_premier + [1] * nb_deuxieme + [2] * nb_troisieme:
+                liste_pararms_ennemis.append(ParamTireurEnnemi(self.nb_entrees_sup_par_vague,
+                                                               NB_ENTREES_CHANGEES_PAR_VAGUES,
+                                                               self.stats_ennemis_morts[i][1].dic_distribution_params))
+
+            del self.stats_ennemis_morts[0]
+            del self.stats_ennemis_morts[0]
+
         self.liste_vagues_a_rajouter.append((random.randint(0, self.nb_bases_ennemis - 1), liste_pararms_ennemis))
 
+    def new_ennemi_stat(self, note, params: ParamTireurEnnemi):
+        if note > 0:
+            self.stats_ennemis_morts.append((note, params))
+            if len(self.stats_ennemis_morts) > NB_ENNEMIS_MEMOIRE_STATS:
+                self.stats_ennemis_morts.remove(min(self.stats_ennemis_morts, key=lambda ennemi: ennemi[0]))
+
     def update(self):
-        self.delay_actuel += 1
-        if self.delay_actuel >= self.delay_vague_suivante:
-            self.new_vague()
-            self.delay_actuel = 0
+        if self.nb_bases_ennemis > 0:
+            self.delay_vague_suivante -= 1
+            if self.delay_vague_suivante <= 0:
+                self.new_vague()
+                self.delay_vague_suivante = DELAY_ENTRE_VAGUES + random.randint(- VARIATION_MAX_DELAY_ENTRE_VAGUES,
+                                                                                VARIATION_MAX_DELAY_ENTRE_VAGUES)

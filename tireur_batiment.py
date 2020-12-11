@@ -82,3 +82,7 @@ class TireurBatiment(Tireur):
     @property
     def scale_ecran_original_zoom(self):
         return Element.dic_elements[PARAM_F_BATIMENT_TIREUR_SCALE_IMAGE_CANON_ZOOM][self.type_element]
+
+    @property
+    def cible_visible_ext(self):
+        return Element.dic_elements[PARAM_A_TIREUR_CIBLE_VISIBLE][self.type_element]

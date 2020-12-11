@@ -16,9 +16,9 @@ class TireurEnnemi(Tireur):
         self.nb_degas_element_mobile = 0
 
     def rate_degas_destructions(self):
-        return self.nb_degas_batiment * COEF_NOTE_ENNEMI_DEGAS_BATIMENT + \
-               self.nb_degas_element_mobile * COEF_NOTE_ENNEMI_DEGAS_ELEMENT_MOBILE + \
-               self.nb_destructions * COEF_NOTE_ENNEMI_VICTIME
+        return int(self.nb_degas_batiment * COEF_NOTE_ENNEMI_DEGAS_BATIMENT +
+                   self.nb_degas_element_mobile * COEF_NOTE_ENNEMI_DEGAS_ELEMENT_MOBILE +
+                   self.nb_destructions * COEF_NOTE_ENNEMI_VICTIME)
 
     @property
     def force_tir(self):
