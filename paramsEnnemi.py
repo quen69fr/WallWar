@@ -4,13 +4,19 @@ from carte import *
 
 
 class ParamTireurEnnemi:
-    def __init__(self, nb_points_sup: int = 0, nb_points_changes: int = 0, dic_distribution_params: dict = None):
+    def __init__(self, nb_points_tot: int = 0, nb_points_changes: int = 0, dic_distribution_params: dict = None):
+        nb_points_del = 0
         if dic_distribution_params is None:
             self.dic_distribution_params = {}
             for param in LISTE_PARAMS_ENNEMIS:
                 self.dic_distribution_params[param] = 0
+            nb_points_sup = nb_points_tot
         else:
             self.dic_distribution_params = dic_distribution_params
+            nb_points_sup = nb_points_tot - sum(self.dic_distribution_params.values())
+            if nb_points_sup < 0:
+                nb_points_del = - nb_points_sup
+                nb_points_sup = 0
 
         self.vie = None
         self.vitesse_deplacement = None
@@ -20,12 +26,13 @@ class ParamTireurEnnemi:
         self.portee_vision = None
         self.intelligence = None
 
-        self.enleve_points(nb_points_changes)
+        self.enleve_points(nb_points_changes + nb_points_del)
         self.ajoute_points(nb_points_sup + nb_points_changes)
         self.calcul_valeurs_params()
 
     def enleve_points(self, nb_points_sup):
         for _ in range(nb_points_sup):
+            # if sum(self.dic_distribution_params.values()) > 0:
             ok = False
             while not ok:
                 key = LISTE_PARAMS_ENNEMIS[random.randint(0, len(LISTE_PARAMS_ENNEMIS) - 1)]

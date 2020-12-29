@@ -27,11 +27,13 @@ class Porteur(Personne):
             self.objectif_global = None
             i_objectif, j_objectif = self.carte.xy_carte_to_ij_case(x_carte, y_carte)
             case = self.carte.get_cases_grille(i_objectif, j_objectif)
-            if case == TYPE_CASE_S_DEPOS:
+            if case == TYPE_CASE_S_DEPOS and not self.peut_donner_vies_batiments:
                 self.objectif_global = self.carte.ij_case_to_centre_xy_carte(i_objectif, j_objectif)
             elif case == TYPE_CASE_SOURCE and self.peut_recolter:
                 self.objectif_global = self.carte.ij_case_to_centre_xy_carte(i_objectif, j_objectif)
-        ElementMobile.new_objectif(self, x_carte, y_carte, i_pos, j_pos, i_objectif, j_objectif, alea=alea)
+        Personne.new_objectif(self, x_carte, y_carte, i_pos, j_pos, i_objectif, j_objectif, alea=alea)
+        if self.objectif_global:
+            self.objectif_groupe = None
 
     def objectif_suivant(self):
         ElementMobile.objectif_suivant(self)
@@ -69,6 +71,8 @@ class Porteur(Personne):
             case = self.carte.get_cases_grille(i, j)
             if case == TYPE_CASE_S_RELAIS:
                 if self.ressource_comptenu == 0:
+                    if self.peut_donner_vies_batiments:
+                        return False
                     self.liste_transaction_a_effectuer.append((i, j, TYPE_TRANSACTION_GET))
                 else:
                     self.liste_transaction_a_effectuer.append((i, j, TYPE_TRANSACTION_GIVE))
@@ -143,6 +147,13 @@ class Porteur(Personne):
                 return True
             return False
 
+    def give_vies(self, batiment: Batiment):
+        if batiment.nb_vies_malus > 0:
+            nb_vies_echange = min(self.nb_vies - 1, batiment.nb_vies_malus,
+                                  self.peut_donner_vies_batiments * COEF_VITESSE_RECHAGRE_VIES)
+            batiment.add_vies(nb_vies_echange)
+            self.nb_vies_malus += nb_vies_echange
+
     def new_choc(self, nb_chocs_max=NB_CHOC_AVANT_ABANDON_OBJECTIF):
         if self.objectif_global is not None:
             nb_chocs_max = int(nb_chocs_max * COEF_NB_CHOC_AVANT_ABANDON_OBJECTIF_GENERAL_PORTEUR)
@@ -175,3 +186,7 @@ class Porteur(Personne):
     @property
     def peut_recolter(self):
         return Element.dic_elements[PARAM_A_PORTEUR_PEUT_RECOLTER][self.type]
+
+    @property
+    def peut_donner_vies_batiments(self):
+        return Element.dic_elements[PARAM_A_PORTEUR_PEUT_DONNER_VIES][self.type]

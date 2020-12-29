@@ -100,6 +100,8 @@ def barre_avancement(dimention: (int, int), couleur, proportion_coloree: float, 
     largeur, hauteur = dimention
     barre = pygame.Surface((largeur, hauteur))
     barre.blit(loaded_images(CARTE_CHEMIN_IMAGE_FOND_PAVAGE_SABLE), (0, 0))
+    if proportion_coloree < 0:
+        proportion_coloree = 0
     if avancement_vertical:
         dy = int(proportion_coloree * hauteur)
         draw_filled_rect(barre, (0, hauteur - dy, largeur, dy), couleur)
@@ -611,7 +613,7 @@ class PanneauConstructionAmeliorationBatiment(PanneauClic):
 
     def update_et_affiche_vignette_cible(self):
         if self.batiment.tireur.cible is None:
-            if self.etat_et_vignette_info_cible_ecran_information[0] is not None:
+            if self.etat_et_vignette_info_cible_ecran_information[1] is not None:
                 self.etat_et_vignette_info_cible_ecran_information = None, None
                 self.ecran.blit(ecran_illustration_vierge((self.largeur_vignette_cible, self.largeur_vignette_cible)),
                                 (MARGE_PANNEAU_SELECTION, int(self.hauteur_bandeau + TAILLE_TEXTE_PANNEAU_SELECTION

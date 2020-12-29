@@ -123,7 +123,7 @@ class Monde:
         if len(self.vagues_ennemis.liste_vagues_a_rajouter) > 0:
             for num_base_ennemi, listes_params_ennemis in self.vagues_ennemis.liste_vagues_a_rajouter:
                 for ennemi in self.liste_ennemis:
-                    if ennemi.num_base_ennemi == num_base_ennemi:
+                    if ennemi.num_base_ennemi == num_base_ennemi or ennemi.num_base_ennemi == NUM_BASE_ENNEMIE_DETRUITE:
                         ennemi.vague_suivante()
                 for params_ennemis in listes_params_ennemis:
                     x, y = self.liste_bases_ennemis[num_base_ennemi].get_pos_autour()
@@ -195,6 +195,12 @@ class Monde:
                 personne.update()
                 if isinstance(personne, Porteur):
                     self.gere_transaction_a_effectuer(personne)
+                    if personne.peut_donner_vies_batiments and not personne.objectif_global:
+                        i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
+                        batiement = self.get_element_fixe(i, j)
+                        if isinstance(batiement, Batiment):
+                            personne.give_vies(batiement)
+
             if personne.nb_vies_malus > 0:
                 i_personne, j_personne = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
                 if self.carte.get_cases_grille(i_personne, j_personne) == TYPE_CASE_S_REGEN:
@@ -220,7 +226,7 @@ class Monde:
             if (i_clic, j_clic) in batiment.liste_cases_pleines:
                 soldat.new_cible_obligatoire(batiment)
                 return
-        # On ne peut pas se tirer dssus :
+        # On ne peut pas se tirer dessus :
         # for personne in self.liste_personnes:
         #     if not personne == soldat and personne.clic(x_carte_clic, y_carte_clic):
         #         soldat.new_cible_obligatoire(personne)
@@ -228,14 +234,16 @@ class Monde:
         soldat.new_objectif(x_carte_clic, y_carte_clic, alea=alea)
 
     def update_personnes_et_ennemis(self):
-        self.gere_chevauchements_personnes_et_ennemis()
+        # if random.randint(0, 2) == 0:
+        self.gere_chevauchements_personnes_et_ennemis_moins_complet()
         self.update_personnes()
         self.update_ennemis()
 
     def gere_chevauchements_personnes_et_ennemis(self):
         for i, personne1 in enumerate(self.liste_personnes + self.liste_ennemis):
             for personne2 in (self.liste_personnes + self.liste_ennemis)[i + 1:]:
-                # if personne1.objectif is None or personne2.objectif is None:
+                # if personne1.objectif is None and personne2.objectif is None:
+                #     continue
                 d_max = (personne1.rayon + personne2.rayon) * COEF_RAYONS_PERSONNES_CHEVAUCHEMENT
                 dx = personne2.x_float - personne1.x_float
                 if abs(dx) < d_max:
@@ -260,11 +268,65 @@ class Monde:
                                     if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
                                         personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
                                     if personne.objectif is not None:
-                                        if not i == old_i or not j == old_j:
-                                            personne.update_chemin_et_position()
+                                        if isinstance(personne1, Personne) and isinstance(personne2, Personne) \
+                                                and personne.objectif_groupe is not None \
+                                                and personne1.objectif_groupe == personne2.objectif_groupe \
+                                                and (personne1.objectif is None or personne2.objectif is None):
+                                            personne.objectif = None
+                                            personne.chemin_liste_objectifs = []
                                         else:
-                                            x, y = personne.objectif
-                                            personne.oriente_vers_point(x, y)
+                                            if not i == old_i or not j == old_j:
+                                                personne.update_chemin_et_position()
+                                            else:
+                                                x, y = personne.objectif
+                                                personne.oriente_vers_point(x, y)
+
+    def gere_chevauchements_personnes_et_ennemis_moins_complet(self):
+        for i, personne1 in enumerate(self.liste_personnes):
+            for personne2 in self.liste_personnes[i + 1:]:
+                self.gere_chevauchement_2_elements_mobiles(personne1, personne2)
+        for i, ennemi1 in enumerate(self.liste_ennemis):
+            for ennemi2 in self.liste_ennemis[i + 1:]:
+                if ennemi1.num_base_ennemi == ennemi2.num_base_ennemi:
+                    self.gere_chevauchement_2_elements_mobiles(ennemi1, ennemi2)
+
+    def gere_chevauchement_2_elements_mobiles(self, personne1, personne2):
+        d_max = (personne1.rayon + personne2.rayon) * COEF_RAYONS_PERSONNES_CHEVAUCHEMENT
+        dx = personne2.x_float - personne1.x_float
+        if abs(dx) < d_max:
+            dy = personne2.y_float - personne1.y_float
+            if abs(dy) < d_max:
+                d2 = dx ** 2 + dy ** 2
+                if d2 < d_max ** 2:
+                    if not d2 == 0:
+                        somme_masses = personne1.masse_relative + personne2.masse_relative
+                        coef = 2 * VITESSE_REPOUSSEMENT_CHEVAUCHEMENTS / math.sqrt(d2)
+                        for personne in [personne2, personne1]:
+                            personne.new_choc()
+                            coef_relatif = coef * (1 - personne.masse_relative / somme_masses)
+                            if personne == personne1:
+                                coef_relatif *= - 1
+                            old_i, old_j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte,
+                                                                          personne.y_sur_carte)
+                            personne.deplace_dx_dy(dx * coef_relatif, dy * coef_relatif)
+                            i, j = self.carte.xy_carte_to_ij_case(personne.x_sur_carte, personne.y_sur_carte)
+                            new_x, new_y = personne.ajuste_xy_objectif(personne.x_sur_carte,
+                                                                       personne.y_sur_carte, i, j)
+                            if not new_x == personne.x_sur_carte or not new_y == personne.y_sur_carte:
+                                personne.deplace_dx_dy(new_x - personne.x_float, new_y - personne.y_float)
+                            if personne.objectif is not None:
+                                if isinstance(personne1, Personne) and isinstance(personne2, Personne) \
+                                        and personne.objectif_groupe is not None \
+                                        and personne1.objectif_groupe == personne2.objectif_groupe \
+                                        and (personne1.objectif is None or personne2.objectif is None):
+                                    personne.objectif = None
+                                    personne.chemin_liste_objectifs = []
+                                else:
+                                    if not i == old_i or not j == old_j:
+                                        personne.update_chemin_et_position()
+                                    else:
+                                        x, y = personne.objectif
+                                        personne.oriente_vers_point(x, y)
 
     def lance_thread_gere_cibles(self):
         if not self.thread_gere_cibles_actif:
@@ -342,9 +404,16 @@ class Monde:
         self.action_remove_batiment(batiment)
 
     def remove_base_ennemi(self, batiment: Batiment):
+        num_base_ennemi = self.liste_bases_ennemis.index(batiment)
         self.liste_bases_ennemis.remove(batiment)
         self.vagues_ennemis.nb_bases_ennemis -= 1
         self.action_remove_batiment(batiment)
+        for ennemi in self.liste_ennemis:
+            if ennemi.num_base_ennemi == num_base_ennemi:
+                ennemi.vague_suivante()
+                ennemi.num_base_ennemi = NUM_BASE_ENNEMIE_DETRUITE
+            elif ennemi.num_base_ennemi > num_base_ennemi:
+                ennemi.num_base_ennemi -= 1
 
     def action_remove_batiment(self, batiment: Batiment):
         if self.element_selectionne == batiment:
@@ -354,6 +423,7 @@ class Monde:
             self.liste_explosions.append(Explosion(batiment.type_explosion, x, y))
         self.carte.clear_case(batiment.liste_cases_depos + batiment.liste_cases_relais +
                               batiment.liste_cases_pleines + batiment.liste_cases_regen)
+        batiment.annule_amelioration_en_cours()
         for pers in self.liste_personnes:
             if isinstance(pers, Soldat):
                 if pers.cible == batiment:

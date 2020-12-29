@@ -6,6 +6,20 @@ from tireur_ennemi import *
 from tireur import *
 
 
+def cible_peut_tirer(cible: Element):
+    if isinstance(cible, Batiment) and cible.peut_tirer or isinstance(cible, ElementMobileTireur):
+        return True
+    return False
+
+
+def find_adversaires_tireurs(liste_adversaires: list):
+    liste_adversaires_tireurs = []
+    for adversaire in liste_adversaires:
+        if cible_peut_tirer(adversaire):
+            liste_adversaires_tireurs.append(adversaire)
+    return liste_adversaires_tireurs
+
+
 class ElementMobileTireur(ElementMobile):
     def __init__(self, type_pers, carte: Carte, x_sur_carte: int, y_sur_carte: int, tireur: Tireur or TireurEnnemi,
                  choix_mouvement: bool, objectif: (int, int) = None, orientation=0, alea=0):
@@ -149,11 +163,6 @@ class ElementMobileTireur(ElementMobile):
     def affiche_tireur(self, screen: pygame.Surface):
         self.tireur.affiche(screen, self.carte, self.x_sur_carte, self.y_sur_carte)
 
-    def cible_peut_tirer(self, cible: Element):
-        if isinstance(cible, Batiment) and cible.peut_tirer or isinstance(cible, ElementMobileTireur):
-            return True
-        return False
-
     def cible_tir_sur_self(self, cible: Element):
         if isinstance(cible, ElementMobileTireur):
             if cible.cible_visible_ext and cible.cible == self and cible.cible_a_porter_de_tir(self) \
@@ -192,13 +201,6 @@ class ElementMobileTireur(ElementMobile):
                 liste_adversaires_visibles.append(adversaire)
         return liste_adversaires_visibles
 
-    def find_adversaires_tireurs(self, liste_adversaires: list):
-        liste_adversaires_tireurs = []
-        for adversaire in liste_adversaires:
-            if self.cible_peut_tirer(adversaire):
-                liste_adversaires_tireurs.append(adversaire)
-        return liste_adversaires_tireurs
-
     def choix_liste_cibles(self, liste_cibles: list):
         if len(liste_cibles) > 0:
             if self.niveau_d_intelligence_actuel <= 3:
@@ -206,11 +208,11 @@ class ElementMobileTireur(ElementMobile):
             elif self.niveau_d_intelligence_actuel == 4:
                 random.shuffle(liste_cibles)
                 for cible in liste_cibles:
-                    if self.cible_peut_tirer(cible):
+                    if cible_peut_tirer(cible):
                         return cible
                 return liste_cibles[0]
             else:
-                liste_cibles_tireuses = self.find_adversaires_tireurs(liste_cibles)
+                liste_cibles_tireuses = find_adversaires_tireurs(liste_cibles)
                 if len(liste_cibles_tireuses) > 0:
                     return min(liste_cibles, key=lambda cib: cib.nb_vies)
                 else:
@@ -222,6 +224,7 @@ class ElementMobileTireur(ElementMobile):
             if liste_cibles_non is None:
                 liste_cibles_non = []
             if self.niveau_d_intelligence_actuel <= 3:
+                random.shuffle(liste_cibles)
                 for cible in liste_cibles:
                     if cible not in liste_cibles_non and self.cible_a_porter_de_tir(cible):
                         return cible
@@ -234,6 +237,7 @@ class ElementMobileTireur(ElementMobile):
             if liste_cibles_non is None:
                 liste_cibles_non = []
             if self.niveau_d_intelligence_actuel <= 3:
+                random.shuffle(liste_cibles)
                 for cible in liste_cibles:
                     if cible not in liste_cibles_non and self.cible_visible(cible):
                         return cible
