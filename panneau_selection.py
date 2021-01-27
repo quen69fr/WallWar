@@ -153,7 +153,7 @@ class BoutonImage(ZoneClicable):
         if not (chemin, largeur, hauteur, contours) in BoutonImage.dic_ecrans:
             img = loaded_images(chemin)
             img_size = img.get_size()
-            ecran = pygame.transform.rotozoom(img, 0, min(largeur / img_size[0], hauteur / img_size[1]))
+            ecran = pygame.transform.rotozoom(img, 0, min((largeur + 1) / img_size[0], (hauteur + 1) / img_size[1]))
             contours = CONTOURS_BULLE_PANNEAU_SELECTION
             if contours > 0:
                 couleur = COULEUR_COMPTENU_PANNEAU_SELECTION
@@ -191,7 +191,7 @@ def ecran_amelioration(largeur, hauteur, type_amelioration_presentee, grisee=Fal
     ecran = pygame.Surface((largeur, hauteur))
     ecran.fill(COULEUR_FOND_PANNEAUX)
     contours = CONTOURS_BULLE_PANNEAU_SELECTION
-    couleur = GRIS_CLAIR if grisee else COULEUR_COMPTENU_PANNEAU_SELECTION
+    couleur = COULEUR_PANNEAU_SELECTION_FENETRE_GRISEE if grisee else COULEUR_COMPTENU_PANNEAU_SELECTION
     if contours > 0:
         draw_filled_rect(ecran, (0, 0, largeur, contours), couleur)
         draw_filled_rect(ecran, (0, 0, contours, hauteur), couleur)
@@ -913,6 +913,23 @@ class PanneauSelection(PanneauClic):
         self.liste_vigettes_ecran_base = []
         self.panneau_construction_amelioration_batiments: PanneauConstructionAmeliorationBatiment or None = None
         self.panneau_infos_selection_element_mobile: PanneauInfosSelectionElementMobile or None = None
+        self.liste_boutons_menu = []
+        self.init_liste_boutons_menu()
+
+        self.action_menu_a_exec = None
+
+    def init_liste_boutons_menu(self):
+        marge = MARGE_GENERALE
+        largeur = self.largeur_ecran - 4 * marge
+        hauteur = (self.hauteur_ecran - 2 * marge) // (len(LISTE_ACTIONS_MENU) + 1) - marge
+        x = marge * 2
+        y = marge
+        for action in LISTE_ACTIONS_MENU:
+            y += hauteur + marge
+            self.liste_boutons_menu.append((action, BoutonTexte(x, y, largeur, hauteur, COULEUR_BOUTONS_ACTIONS_MENU,
+                                                                DIC_ACTION_MENU[PARAM_ACTION_MENU_TEXTE][action],
+                                                                int(TAILLE_TEXTE_PANNEAU_SELECTION * 2.5),
+                                                                COULEUR_COMPTENU_PANNEAU_SELECTION)))
 
     def gere_clic(self, x_souris: int, y_souris: int):
         if self.panneau_construction_amelioration_batiments is not None and \
@@ -920,26 +937,37 @@ class PanneauSelection(PanneauClic):
             self.panneau_construction_amelioration_batiments.gere_clic(x_souris, y_souris)
         else:
             x_souris_relatif, y_souris_relatif = x_souris - self.x_ecran, y_souris - self.y_ecran
-            for bouton in self.liste_boutons_ecran:
-                if bouton.clic(x_souris_relatif, y_souris_relatif):
-                    if isinstance(self.element_selectionne, Batiment):
-                        if self.element_selectionne.etape_construction < \
-                                self.element_selectionne.etape_construction_max:
-                            self.monde.annule_batiment_en_cours_de_construction_selectionne()
-                    if isinstance(self.element_selectionne, ElementMobile):
-                        if isinstance(bouton, VignetteElementVie):
-                            self.monde.element_selectionne = bouton.element
-                        elif isinstance(bouton, BoutonImage):
+            if self.element_selectionne is None:
+                for action, bouton in self.liste_boutons_menu:
+                    if bouton.clic(x_souris_relatif, y_souris_relatif):
+                        self.action_menu_a_exec = action
+                        break
+            else:
+                for bouton in self.liste_boutons_ecran:
+                    if bouton.clic(x_souris_relatif, y_souris_relatif):
+                        if isinstance(self.element_selectionne, Batiment):
+                            if self.element_selectionne.etape_construction < \
+                                    self.element_selectionne.etape_construction_max:
+                                self.monde.annule_batiment_en_cours_de_construction_selectionne()
+                        elif isinstance(self.element_selectionne, ElementMobile):
+                            if isinstance(bouton, VignetteElementVie):
+                                self.monde.element_selectionne = bouton.element
+                            elif isinstance(bouton, BoutonImage):
+                                if bouton.type == TYPE_BOUTON_IMAGE_STOP:
+                                    self.element_selectionne.stop()
+                                elif bouton.type == TYPE_BOUTON_IMAGE_IMMOBILE and \
+                                        isinstance(self.element_selectionne, Soldat):
+                                    self.element_selectionne.immobilise()
+                        elif type(self.element_selectionne) == list:
                             if bouton.type == TYPE_BOUTON_IMAGE_STOP:
-                                self.element_selectionne.stop()
-                            elif bouton.type == TYPE_BOUTON_IMAGE_IMMOBILE and \
-                                    isinstance(self.element_selectionne, Soldat):
-                                self.element_selectionne.immobilise()
-                    return
-            for vignette in self.liste_vigettes_ecran_base:
-                if vignette.clic(x_souris_relatif, y_souris_relatif):
-                    self.monde.element_selectionne = vignette.element
-                    return
+                                self.monde.stop_selection()
+                            elif bouton.type == TYPE_BOUTON_IMAGE_IMMOBILE:
+                                self.monde.immobilise_selection()
+                        return
+                for vignette in self.liste_vigettes_ecran_base:
+                    if vignette.clic(x_souris_relatif, y_souris_relatif):
+                        self.monde.element_selectionne = vignette.element
+                        return
 
     def gere_ctrl_clic(self, x_souris: int, y_souris: int):
         x_souris_relatif, y_souris_relatif = x_souris - self.x_ecran, y_souris - self.y_ecran
@@ -1029,7 +1057,19 @@ class PanneauSelection(PanneauClic):
     def update_affichage(self):
         self.ecran.blit(self.ecran_base, (0, 0))
         self.liste_boutons_ecran = []
-        if self.element_selectionne is not None and not type(self.element_selectionne) == list:
+        if type(self.element_selectionne) == list:
+            marge = MARGE_PANNEAU_SELECTION
+            taille = int(TAILLE_TEXTE_PANNEAU_SELECTION * 2.5 * 1.5 - marge)
+            self.liste_boutons_ecran.append(BoutonImage(marge, marge, taille, taille, TYPE_BOUTON_IMAGE_STOP))
+            affiche_bouton_immobile = False
+            for element in self.element_selectionne:
+                if isinstance(element, Soldat):
+                    affiche_bouton_immobile = True
+                    break
+            if affiche_bouton_immobile:
+                self.liste_boutons_ecran.append(BoutonImage(marge * 2 + taille, marge, taille, taille,
+                                                            TYPE_BOUTON_IMAGE_IMMOBILE))
+        elif self.element_selectionne is not None:
             x, y, largeur, hauteur = self.rect_bulle
             x_centre = int(x + largeur / 2)
 
@@ -1255,11 +1295,20 @@ class PanneauSelection(PanneauClic):
                                                   (self.element_selectionne.nb_vies /
                                                    self.element_selectionne.nb_vies_max),
                                                   CONTOURS_BULLE_PANNEAU_SELECTION, COULEUR_COMPTENU_PANNEAU_SELECTION)
+                    # etiquette_simple = (str(int(self.element_selectionne.nb_vies)),
+                    #                     COULEUR_COMPTENU_PANNEAU_SELECTION,
+                    #                     int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4))
                     if infos_barre_ressource is None:
                         x_barre_vie = int(x_centre - largeur_barre_vie / 2)
                     else:
                         x_barre_vie = int(x + largeur - largeur_barre_vie - MARGE_PANNEAU_SELECTION * 1.5)
                     self.ecran.blit(barre_vies, (x_barre_vie, y_barre_vie))
+                    affiche_texte(str(int(self.element_selectionne.nb_vies)),
+                                  int(x_barre_vie + DIMENTION_BARRES_VIE_PANNEAU_SELECTION[0] / 2),
+                                  int(y_barre_vie + DIMENTION_BARRES_VIE_PANNEAU_SELECTION[1] / 2 + 2),
+                                  self.ecran, taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4),
+                                  x_0gauche_1centre_2droite=1, y_0haut_1centre_2bas=1,
+                                  couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
                     image = loaded_images(CHEMIN_IMAGE_VIES_PANNEAU_SELECTION)
                     larg, haut = image.get_size()
                     self.ecran.blit(image, (x_barre_vie - larg / 2, int(y_barre_vie - haut / 2 +
@@ -1302,23 +1351,20 @@ class PanneauSelection(PanneauClic):
                           taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 1.4), couleur=COULEUR_COMPTENU_PANNEAU_SELECTION,
                           x_0gauche_1centre_2droite=1)
 
-            for bouton in self.liste_boutons_ecran:
-                bouton.affiche(self.ecran)
+        for bouton in self.liste_boutons_ecran:
+            bouton.affiche(self.ecran)
 
     def update_affichage_base(self):
         self.ecran_base.fill(-1)
         self.panneau_construction_amelioration_batiments = None
         self.liste_vigettes_ecran_base = []
-        centre_x = int(self.largeur_ecran / 2)
-        centre_y = int(self.hauteur_ecran / 2)
+        centre_x = self.largeur_ecran // 2
         if self.element_selectionne is None:
-            taille = TAILLE_TEXTE_PANNEAU_SELECTION * 6
-            affiche_texte(TEXTE_PANNEAU_SELECTION_WALL_WAR[0], centre_x, centre_y - TAILLE_TEXTE_PANNEAU_SELECTION,
-                          self.ecran_base, taille=taille, x_0gauche_1centre_2droite=1, y_0haut_1centre_2bas=2,
-                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
-            affiche_texte(TEXTE_PANNEAU_SELECTION_WALL_WAR[1], centre_x, centre_y + TAILLE_TEXTE_PANNEAU_SELECTION,
-                          self.ecran_base, taille=taille, x_0gauche_1centre_2droite=1,
-                          couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
+            affiche_texte(TEXTE_PANNEAU_SELECTION_WALL_WAR, centre_x, MARGE_GENERALE, self.ecran_base,
+                          taille=int(TAILLE_TEXTE_PANNEAU_SELECTION * 4.5),
+                          x_0gauche_1centre_2droite=1, couleur=COULEUR_COMPTENU_PANNEAU_SELECTION)
+            for _, bouton in self.liste_boutons_menu:
+                bouton.affiche(self.ecran_base)
         else:
             if type(self.element_selectionne) == list:
                 taille = int(TAILLE_TEXTE_PANNEAU_SELECTION * 2.5)

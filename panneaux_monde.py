@@ -33,6 +33,11 @@ class PanneauxMonde:
             self.panneau_souris.gere_clic(x_souris, y_souris)
         return None
 
+    def pop_action_menu_a_exec(self):
+        action = self.panneau_selection.action_menu_a_exec
+        self.panneau_selection.action_menu_a_exec = None
+        return action
+
     def update(self):
         self.panneau_infos.update()
         self.panneau_selection.update()

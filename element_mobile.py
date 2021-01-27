@@ -4,9 +4,9 @@ from element import *
 
 
 class ElementMobile(Element):
-    def __init__(self, type_element_mobil, carte: Carte, x_sur_carte: int, y_sur_carte: int,
+    def __init__(self, type_element_mobile, carte: Carte, x_sur_carte: int, y_sur_carte: int,
                  choix_mouvement: bool, objectif: (int, int) = None, orientation=0, alea=0):
-        Element.__init__(self, type_element_mobil)
+        Element.__init__(self, type_element_mobile)
         self.carte = carte
 
         # Attention : On ne peut pas changer l'image d'un élément mobile en cours de route (on peut par contre changer

@@ -354,6 +354,23 @@ class Monde:
             pygame.time.Clock().tick(FPS_UPDATE_CIBLES_TIREUR)
         self.thread_gere_cibles_actif = False
 
+    def stop_selection(self):
+        if self.element_selectionne is not None:
+            if type(self.element_selectionne) == list:
+                for element in self.element_selectionne:
+                    element.stop()
+            elif self.element_selectionne in self.liste_personnes:
+                self.element_selectionne.stop()
+
+    def immobilise_selection(self):
+        if self.element_selectionne is not None:
+            if type(self.element_selectionne) == list:
+                for element in self.element_selectionne:
+                    if isinstance(element, Soldat):
+                        element.immobilise()
+            elif isinstance(self.element_selectionne, Soldat):
+                self.element_selectionne.immobilise()
+
     # -------------------------------------------------
     #                      Sources
     # -------------------------------------------------
@@ -663,6 +680,12 @@ class Monde:
 
     def gere_touche_pause_enfoncee(self):
         self.change_mode_pause()
+
+    def gere_touche_enfoncee(self, key):
+        if key == KEY_STOP:
+            self.stop_selection()
+        elif key == KEY_IMMOBILE:
+            self.immobilise_selection()
 
     def update(self):
         if self.carte.deplace():
